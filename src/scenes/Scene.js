@@ -13,6 +13,7 @@ export default class Scene {
 		this.aspectRatio = 0;
 		this.scene = null;
 		this.envMap = null;
+		this.isDisposed = false;
 		this.#init();
 	}
 
@@ -62,6 +63,8 @@ export default class Scene {
 				if (bar) bar.style.width = `${pct}%`;
 			},
 			onLoad: (points) => {
+				if (this.isDisposed) return;
+
 				points.rotation.x = Math.PI;
 				this.scene.add(points);
 				const loader = document.getElementById("loader");
@@ -81,11 +84,15 @@ export default class Scene {
 	}
 
 	animate(delta, elapsed) {
+		if (this.isDisposed) return;
+
 		this.cameraRig?.update(delta);
 		this.plyLoader?.update(delta, elapsed);
 	}
 
 	onResize(width, height) {
+		if (this.isDisposed) return;
+
 		this.width = width;
 		this.height = height;
 		this.aspectRatio = width / height;
@@ -94,5 +101,18 @@ export default class Scene {
 		this.camera.updateProjectionMatrix();
 
 		this.plyLoader?.onResize(width, height);
+	}
+
+	dispose() {
+		this.isDisposed = true;
+		this.cameraRig?.dispose();
+		this.plyLoader?.dispose();
+		this.scene?.clear();
+
+		this.cameraRig = null;
+		this.plyLoader = null;
+		this.camera = null;
+		this.scene = null;
+		this.context = null;
 	}
 }

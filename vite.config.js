@@ -1,8 +1,9 @@
 import tailwindcss from "@tailwindcss/vite";
+import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
 import glsl from "vite-plugin-glsl";
 
 export default defineConfig({
-	plugins: [tailwindcss(), glsl()],
-	base: "/three-ml-sharp/",
+  plugins: [react(), tailwindcss(), glsl()],
+  base: "/",
 });

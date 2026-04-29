@@ -19,15 +19,16 @@ export class CameraRig {
 
 		// normalized pointer (-1..1)
 		this.pointer = { x: 0, y: 0 };
+		this._handleMouseMove = (event) => {
+			this.pointer.x = (event.clientX / window.innerWidth) * 2 - 1;
+			this.pointer.y = -(event.clientY / window.innerHeight) * 2 + 1;
+		};
 
 		this._bindEvents();
 	}
 
 	_bindEvents() {
-		window.addEventListener("mousemove", (event) => {
-			this.pointer.x = (event.clientX / window.innerWidth) * 2 - 1;
-			this.pointer.y = -(event.clientY / window.innerHeight) * 2 + 1;
-		});
+		window.addEventListener("mousemove", this._handleMouseMove);
 	}
 
 	/**
@@ -67,5 +68,9 @@ export class CameraRig {
 		// Always look at target
 		this.camera.lookAt(this.target);
 		this.camera.rotation.z = Math.sin(this.elapsed * 0.5) * 0.1;
+	}
+
+	dispose() {
+		window.removeEventListener("mousemove", this._handleMouseMove);
 	}
 }

@@ -4,6 +4,8 @@ class WebGLContext {
 	static getInstance(container) {
 		if (!WebGLContext.instance) {
 			WebGLContext.instance = new WebGLContext(container);
+		} else if (container) {
+			WebGLContext.instance.container = container;
 		}
 
 		return WebGLContext.instance;
@@ -75,6 +77,17 @@ class WebGLContext {
 		this.pixelRatio = Math.min(window.devicePixelRatio, 2);
 		this.renderer.setSize(width, height);
 		this.renderer.setPixelRatio(this.pixelRatio);
+	}
+
+	dispose() {
+		this.renderer?.dispose();
+		this.renderer?.forceContextLoss();
+		this.canvas?.remove();
+
+		this.renderer = null;
+		this.canvas = null;
+		this.container = null;
+		WebGLContext.instance = null;
 	}
 }
 

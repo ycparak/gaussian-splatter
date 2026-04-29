@@ -16,6 +16,8 @@ export default class PlyLoader {
 		this.onLoad = options.onLoad ?? null;
 		this.onProgress = options.onProgress ?? null;
 		this.onError = options.onError ?? null;
+		this.abortController = new AbortController();
+		this.isDisposed = false;
 
 		this.size = options.size ?? 0.07;
 		this.flowFieldInfluence = options.flowFieldInfluence ?? 0.5;
@@ -27,18 +29,23 @@ export default class PlyLoader {
 	}
 
 	#load() {
-		fetch(this.url)
+		fetch(this.url, { signal: this.abortController.signal })
 			.then((response) => {
 				if (!response.ok) throw new Error(`HTTP ${response.status}`);
 				return this.#readWithProgress(response);
 			})
 			.then((buffer) => {
+				if (this.isDisposed) return;
+
 				const { positions, colors, vertexCount } = this.#parse(buffer);
+				if (this.isDisposed) return;
+
 				this.#setupGPGPU(positions, vertexCount);
 				this.#setupParticles(positions, colors, vertexCount);
 				this.onLoad?.(this.points);
 			})
 			.catch((error) => {
+				if (this.isDisposed && error.name === "AbortError") return;
 				console.error("PLY load error:", error);
 				this.onError?.(error);
 			});
@@ -204,6 +211,7 @@ export default class PlyLoader {
 	}
 
 	update(delta, elapsed) {
+		if (this.isDisposed) return;
 		if (!this.gpgpu || !this.particlesVariable) return;
 
 		this.particlesVariable.material.uniforms.uTime.value = elapsed;
@@ -216,6 +224,7 @@ export default class PlyLoader {
 	}
 
 	onResize(width, height) {
+		if (this.isDisposed) return;
 		if (!this.material) return;
 		this.material.uniforms.uResolution.value.set(
 			width * window.devicePixelRatio,
@@ -224,6 +233,8 @@ export default class PlyLoader {
 	}
 
 	dispose() {
+		this.isDisposed = true;
+		this.abortController.abort();
 		this.points?.geometry?.dispose();
 		this.material?.dispose();
 		this.gpgpu?.dispose();

@@ -8,9 +8,11 @@ import ColorAdjustPass from "../utils/ColorAdjustPass";
 export default class PostProcessing {
 	constructor(renderer, scene, camera) {
 		this.composer = new EffectComposer(renderer);
+		this.passes = [];
 
 		const renderPass = new RenderPass(scene, camera);
 		this.composer.addPass(renderPass);
+		this.passes.push(renderPass);
 
 		const { width, height } = renderer.getSize(new THREE.Vector2());
 
@@ -21,6 +23,7 @@ export default class PostProcessing {
 			0.5, // threshold
 		);
 		this.composer.addPass(this.bloomPass);
+		this.passes.push(this.bloomPass);
 
 		this.colorPass = new ColorAdjustPass({
 			brightness: 0.0,
@@ -28,9 +31,11 @@ export default class PostProcessing {
 			saturation: 1.2,
 		});
 		this.composer.addPass(this.colorPass);
+		this.passes.push(this.colorPass);
 
 		const outputPass = new OutputPass();
 		this.composer.addPass(outputPass);
+		this.passes.push(outputPass);
 	}
 
 	render() {
@@ -39,5 +44,13 @@ export default class PostProcessing {
 
 	onResize(width, height) {
 		this.composer.setSize(width, height);
+	}
+
+	dispose() {
+		for (const pass of this.passes) {
+			pass.dispose?.();
+		}
+		this.composer.dispose?.();
+		this.passes = [];
 	}
 }
