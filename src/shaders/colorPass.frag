@@ -2,6 +2,8 @@ uniform sampler2D tDiffuse;
 uniform float uBrightness;
 uniform float uContrast;
 uniform float uSaturation;
+uniform vec3 uTintColor;
+uniform float uTintStrength;
 varying vec2 vUv;
 void main() {
 	vec4 texel = texture2D(tDiffuse, vUv);
@@ -10,5 +12,6 @@ void main() {
 	color = pow(color, vec3(1.0 / uContrast));
 	float luma = dot(color, vec3(0.2126, 0.7152, 0.0722));
 	color = mix(vec3(luma), color, uSaturation);
+	color = mix(color, color * uTintColor, uTintStrength);
 	gl_FragColor = vec4(color, texel.a);
 }

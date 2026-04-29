@@ -1,5 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import SceneControlsSidebar from "./components/SceneControlsSidebar";
 import SceneSidebar from "./components/SceneSidebar";
+import {
+	cloneSceneSettings,
+	DEFAULT_SCENE_SETTINGS,
+} from "./config/sceneControls";
 import Three from "./core/Three";
 import { defaultScene } from "./scenes/availableScenes";
 
@@ -7,11 +12,22 @@ export default function App() {
 	const containerRef = useRef(null);
 	const threeRef = useRef(null);
 	const [activeSceneId, setActiveSceneId] = useState(defaultScene.id);
+	const [sceneSettings, setSceneSettings] = useState(() =>
+		cloneSceneSettings(),
+	);
+	const initialSceneSettingsRef = useRef(sceneSettings);
+	const [sceneStats, setSceneStats] = useState({
+		activeAssetId: defaultScene?.id ?? null,
+		particleCount: 0,
+	});
 
 	useEffect(() => {
 		if (!containerRef.current || threeRef.current) return;
 
-		const three = new Three(containerRef.current);
+		const three = new Three(containerRef.current, {
+			settings: initialSceneSettingsRef.current,
+			onStatsChange: setSceneStats,
+		});
 		threeRef.current = three;
 		three.run();
 
@@ -21,14 +37,28 @@ export default function App() {
 		};
 	}, []);
 
+	useEffect(() => {
+		threeRef.current?.applySettings(sceneSettings);
+	}, [sceneSettings]);
+
 	const handleSceneSelect = useCallback((scene) => {
 		setActiveSceneId(scene.id);
 		threeRef.current?.loadScene(scene);
 	}, []);
 
+	const resetSceneSettings = useCallback(() => {
+		setSceneSettings(cloneSceneSettings(DEFAULT_SCENE_SETTINGS));
+	}, []);
+
 	return (
 		<>
 			<div ref={containerRef} className="h-lvh w-full" />
+			<SceneControlsSidebar
+				settings={sceneSettings}
+				stats={sceneStats}
+				onSettingsChange={setSceneSettings}
+				onResetAll={resetSceneSettings}
+			/>
 			<SceneSidebar
 				activeSceneId={activeSceneId}
 				onSceneSelect={handleSceneSelect}

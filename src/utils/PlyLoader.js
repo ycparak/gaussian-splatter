@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import { GPUComputationRenderer } from "three/examples/jsm/misc/GPUComputationRenderer";
+import { DEFAULT_SCENE_SETTINGS } from "../config/sceneControls";
 import gpgpuParticlesShader from "../shaders/gpgpu/particles.glsl";
 import fragmentShader from "../shaders/particles.frag";
 import vertexShader from "../shaders/particles.vert";
@@ -29,11 +30,23 @@ export default class PlyLoader {
 		this.abortController = new AbortController();
 		this.isDisposed = false;
 
-		this.size = options.size ?? 0.07;
-		this.flowFieldInfluence = options.flowFieldInfluence ?? 0.5;
-		this.flowFieldStrength = options.flowFieldStrength ?? 2.0;
-		this.flowFieldFrequency = options.flowFieldFrequency ?? 0.5;
-		this.morphDuration = options.morphDuration ?? 1.45;
+		const particleSettings =
+			options.settings?.particles ?? DEFAULT_SCENE_SETTINGS.particles;
+		const lightingSettings =
+			options.settings?.lighting ?? DEFAULT_SCENE_SETTINGS.lighting;
+		this.size = options.size ?? particleSettings.size;
+		this.flowFieldInfluence =
+			options.flowFieldInfluence ?? particleSettings.flowFieldInfluence;
+		this.flowFieldStrength =
+			options.flowFieldStrength ?? particleSettings.flowFieldStrength;
+		this.flowFieldFrequency =
+			options.flowFieldFrequency ?? particleSettings.flowFieldFrequency;
+		this.timeScale = particleSettings.timeScale;
+		this.decayRate = particleSettings.decayRate;
+		this.returnForce = particleSettings.returnForce;
+		this.morphDuration =
+			options.morphDuration ?? particleSettings.morphDuration;
+		this.lighting = { ...lightingSettings };
 		this.renderer = options.renderer ?? null;
 
 		this.#load();
@@ -269,6 +282,15 @@ export default class PlyLoader {
 		this.particlesVariable.material.uniforms.uFlowFieldFrequency = {
 			value: this.flowFieldFrequency,
 		};
+		this.particlesVariable.material.uniforms.uTimeScale = {
+			value: this.timeScale,
+		};
+		this.particlesVariable.material.uniforms.uDecayRate = {
+			value: this.decayRate,
+		};
+		this.particlesVariable.material.uniforms.uReturnForce = {
+			value: this.returnForce,
+		};
 
 		this.gpgpu.init();
 	}
@@ -311,8 +333,8 @@ export default class PlyLoader {
 				uSize: { value: this.size },
 				uResolution: {
 					value: new THREE.Vector2(
-						window.innerWidth * window.devicePixelRatio,
-						window.innerHeight * window.devicePixelRatio,
+						window.innerWidth * this.#getPixelRatio(),
+						window.innerHeight * this.#getPixelRatio(),
 					),
 				},
 				uParticlesTexture: {
@@ -320,6 +342,17 @@ export default class PlyLoader {
 						.texture,
 				},
 				uMorphProgress: { value: 0 },
+				uLightDirection: {
+					value: new THREE.Vector3(
+						this.lighting.directionX,
+						this.lighting.directionY,
+						this.lighting.directionZ,
+					),
+				},
+				uAmbientLight: { value: this.lighting.ambient },
+				uDiffuseLight: { value: this.lighting.diffuse },
+				uSpecularLight: { value: this.lighting.specular },
+				uShininess: { value: this.lighting.shininess },
 			},
 			transparent: true,
 			depthWrite: true,
@@ -360,9 +393,51 @@ export default class PlyLoader {
 		if (this.isDisposed) return;
 		if (!this.material) return;
 		this.material.uniforms.uResolution.value.set(
-			width * window.devicePixelRatio,
-			height * window.devicePixelRatio,
+			width * this.#getPixelRatio(),
+			height * this.#getPixelRatio(),
 		);
+	}
+
+	applySettings(settings = DEFAULT_SCENE_SETTINGS) {
+		const particles = settings.particles ?? DEFAULT_SCENE_SETTINGS.particles;
+		const lighting = settings.lighting ?? DEFAULT_SCENE_SETTINGS.lighting;
+
+		this.size = particles.size;
+		this.flowFieldInfluence = particles.flowFieldInfluence;
+		this.flowFieldStrength = particles.flowFieldStrength;
+		this.flowFieldFrequency = particles.flowFieldFrequency;
+		this.timeScale = particles.timeScale;
+		this.decayRate = particles.decayRate;
+		this.returnForce = particles.returnForce;
+		this.morphDuration = particles.morphDuration;
+		this.lighting = { ...lighting };
+
+		if (this.material) {
+			this.material.uniforms.uSize.value = this.size;
+			this.material.uniforms.uLightDirection.value.set(
+				lighting.directionX,
+				lighting.directionY,
+				lighting.directionZ,
+			);
+			this.material.uniforms.uAmbientLight.value = lighting.ambient;
+			this.material.uniforms.uDiffuseLight.value = lighting.diffuse;
+			this.material.uniforms.uSpecularLight.value = lighting.specular;
+			this.material.uniforms.uShininess.value = lighting.shininess;
+		}
+
+		if (this.particlesVariable) {
+			const uniforms = this.particlesVariable.material.uniforms;
+			uniforms.uFlowFieldInfluence.value = this.flowFieldInfluence;
+			uniforms.uFlowFieldStrength.value = this.flowFieldStrength;
+			uniforms.uFlowFieldFrequency.value = this.flowFieldFrequency;
+			uniforms.uTimeScale.value = this.timeScale;
+			uniforms.uDecayRate.value = this.decayRate;
+			uniforms.uReturnForce.value = this.returnForce;
+		}
+	}
+
+	#getPixelRatio() {
+		return this.renderer?.getPixelRatio?.() ?? window.devicePixelRatio;
 	}
 
 	dispose() {

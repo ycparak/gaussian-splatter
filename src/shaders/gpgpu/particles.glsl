@@ -6,11 +6,14 @@ uniform float uMorphProgress;
 uniform float uFlowFieldInfluence;
 uniform float uFlowFieldStrength;
 uniform float uFlowFieldFrequency;
+uniform float uTimeScale;
+uniform float uDecayRate;
+uniform float uReturnForce;
 
 #include ../includes/simplexNoise4d.glsl
 
 void main() {
-  float time = uTime * 0.2;
+  float time = uTime * uTimeScale;
   vec2 uv = gl_FragCoord.xy / resolution.xy;
   vec4 particle = texture(uParticles, uv);
   vec4 base = texture(uBase, uv);
@@ -39,10 +42,10 @@ void main() {
     );
     flowField = normalize(flowField);
     particle.xyz += flowField * uDeltaTime * strength * uFlowFieldStrength;
-    particle.xyz += (morphBase - particle.xyz) * uDeltaTime * 7.0 * smoothstep(0.0, 0.08, uMorphProgress);
+    particle.xyz += (morphBase - particle.xyz) * uDeltaTime * uReturnForce * smoothstep(0.0, 0.08, uMorphProgress);
 
     // Decay
-    particle.a += uDeltaTime * 0.9;
+    particle.a += uDeltaTime * uDecayRate;
   }
 
   gl_FragColor = particle;

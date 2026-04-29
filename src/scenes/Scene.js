@@ -1,11 +1,12 @@
 import * as THREE from "three";
+import { DEFAULT_SCENE_SETTINGS } from "../config/sceneControls";
 import WebGLContext from "../core/WebGLContext";
 import { CameraRig } from "../utils/CameraRig";
 import PlyLoader from "../utils/PlyLoader";
 import { defaultScene } from "./availableScenes";
 
 export default class Scene {
-	constructor() {
+	constructor(options = {}) {
 		this.context = null;
 		this.camera = null;
 		this.cameraRig = null;
@@ -16,6 +17,8 @@ export default class Scene {
 		this.envMap = null;
 		this.isDisposed = false;
 		this.activeAssetId = null;
+		this.settings = options.settings ?? DEFAULT_SCENE_SETTINGS;
+		this.onStatsChange = options.onStatsChange ?? null;
 		this.#init();
 	}
 
@@ -33,22 +36,41 @@ export default class Scene {
 
 	#setupScene() {
 		this.scene = new THREE.Scene();
-		this.scene.background = new THREE.Color(0x000000);
-		this.scene.fog = new THREE.Fog(0x000000, 40.0, 45.0);
+		this.scene.background = new THREE.Color(this.settings.scene.background);
+		this.scene.fog = this.settings.scene.fogEnabled
+			? new THREE.Fog(
+					this.settings.scene.fogColor,
+					this.settings.scene.fogNear,
+					this.settings.scene.fogFar,
+				)
+			: null;
 	}
 
 	#setupCamera() {
 		this.#calculateAspectRatio();
-		this.camera = new THREE.PerspectiveCamera(45, this.aspectRatio, 0.01, 1000);
-		this.camera.position.z = 3;
+		this.camera = new THREE.PerspectiveCamera(
+			this.settings.camera.fov,
+			this.aspectRatio,
+			0.01,
+			1000,
+		);
+		this.camera.position.z = this.settings.camera.z;
 	}
 
 	#setupCameraRig() {
 		this.cameraRig = new CameraRig(this.camera, {
-			xLimit: [-10.25, 10.25],
-			yLimit: [-1.25, 0.25],
-			target: new THREE.Vector3(0, 0, -5),
-			damping: 2.0,
+			xLimit: [this.settings.camera.xMin, this.settings.camera.xMax],
+			yLimit: [this.settings.camera.yMin, this.settings.camera.yMax],
+			target: new THREE.Vector3(
+				this.settings.camera.targetX,
+				this.settings.camera.targetY,
+				this.settings.camera.targetZ,
+			),
+			damping: this.settings.camera.damping,
+			z: this.settings.camera.z,
+			bobAmplitude: this.settings.camera.bobAmplitude,
+			bobSpeed: this.settings.camera.bobSpeed,
+			rollAmplitude: this.settings.camera.rollAmplitude,
 		});
 	}
 
@@ -75,10 +97,13 @@ export default class Scene {
 
 		if (this.plyLoader?.isReady) {
 			const didStartTransition = this.plyLoader.transitionTo(asset.url, {
-				duration: 1.45,
+				duration: this.settings.particles.morphDuration,
 				onProgress,
 				onLoad: () => {
-					if (!this.isDisposed) this.activeAssetId = asset.id;
+					if (this.isDisposed) return;
+					this.activeAssetId = asset.id;
+					this.applySettings(this.settings);
+					this.#notifyStatsChange();
 				},
 				onError,
 			});
@@ -89,11 +114,7 @@ export default class Scene {
 		this.plyLoader?.dispose();
 		this.plyLoader = new PlyLoader(asset.url, {
 			renderer: this.context.renderer,
-			size: 0.05,
-			flowFieldInfluence: 0.5,
-			flowFieldStrength: 1.2,
-			flowFieldFrequency: 0.5,
-			morphDuration: 1.45,
+			settings: this.settings,
 			onProgress,
 			onLoad: (points) => this.#showLoadedPoints(points, asset),
 			onError,
@@ -103,10 +124,13 @@ export default class Scene {
 	#showLoadedPoints(points, asset) {
 		if (this.isDisposed) return;
 
-		points.rotation.x = Math.PI;
+		points.rotation.x = this.settings.scene.pointRotationX;
+		points.scale.setScalar(this.settings.scene.scale);
 		this.scene.remove(...this.scene.children);
 		this.scene.add(points);
 		this.activeAssetId = asset.id;
+		this.plyLoader?.applySettings(this.settings);
+		this.#notifyStatsChange();
 
 		const loader = document.getElementById("loader");
 		if (loader) {
@@ -140,6 +164,41 @@ export default class Scene {
 		this.camera.updateProjectionMatrix();
 
 		this.plyLoader?.onResize(width, height);
+	}
+
+	applySettings(settings = DEFAULT_SCENE_SETTINGS) {
+		if (this.isDisposed) return;
+
+		this.settings = settings;
+		this.scene.background = new THREE.Color(settings.scene.background);
+		this.scene.fog = settings.scene.fogEnabled
+			? new THREE.Fog(
+					settings.scene.fogColor,
+					settings.scene.fogNear,
+					settings.scene.fogFar,
+				)
+			: null;
+
+		this.camera.fov = settings.camera.fov;
+		this.camera.updateProjectionMatrix();
+		this.cameraRig?.applySettings(settings.camera);
+
+		if (this.plyLoader?.points) {
+			this.plyLoader.points.rotation.x = settings.scene.pointRotationX;
+			this.plyLoader.points.scale.setScalar(settings.scene.scale);
+		}
+		this.plyLoader?.applySettings(settings);
+	}
+
+	getSceneStats() {
+		return {
+			activeAssetId: this.activeAssetId,
+			particleCount: this.plyLoader?.vertexCount ?? 0,
+		};
+	}
+
+	#notifyStatsChange() {
+		this.onStatsChange?.(this.getSceneStats());
 	}
 
 	dispose() {

@@ -1,6 +1,11 @@
 uniform vec3 fogColor;
 uniform float fogNear;
 uniform float fogFar;
+uniform vec3 uLightDirection;
+uniform float uAmbientLight;
+uniform float uDiffuseLight;
+uniform float uSpecularLight;
+uniform float uShininess;
 
 varying vec3 vColor;
 varying float vFogDepth;
@@ -16,8 +21,7 @@ void main() {
   // Reconstruct sphere normal
   vec3 normal = vec3(coord, sqrt(1.0 - r2));
 
-  // Light direction (view space, upper-right)
-  vec3 lightDir = normalize(vec3(0.5, 0.8, 1.0));
+  vec3 lightDir = length(uLightDirection) > 0.0001 ? normalize(uLightDirection) : vec3(0.0, 0.0, 1.0);
 
   // Diffuse
   float diffuse = max(dot(normal, lightDir), 0.0);
@@ -25,10 +29,10 @@ void main() {
   // Specular (Blinn-Phong)
   vec3 viewDir = vec3(0.0, 0.0, 1.0);
   vec3 halfDir = normalize(lightDir + viewDir);
-  float specular = pow(max(dot(normal, halfDir), 0.0), 32.0);
+  float specular = pow(max(dot(normal, halfDir), 0.0), uShininess);
 
   // Ambient + diffuse + specular
-  vec3 color = vColor * (0.5 + 0.5 * diffuse) + vec3(0.05) * specular;
+  vec3 color = vColor * (uAmbientLight + uDiffuseLight * diffuse) + vec3(uSpecularLight) * specular;
 
   // Fog
   float fogFactor = smoothstep(fogNear, fogFar, vFogDepth);

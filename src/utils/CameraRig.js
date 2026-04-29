@@ -15,6 +15,10 @@ export class CameraRig {
 		this.xLimit = options.xLimit || [-10, 10];
 		this.yLimit = options.yLimit || null;
 		this.damping = options.damping || 2;
+		this.baseZ = options.z ?? 3;
+		this.bobAmplitude = options.bobAmplitude ?? 1;
+		this.bobSpeed = options.bobSpeed ?? 0.5;
+		this.rollAmplitude = options.rollAmplitude ?? 0.1;
 		this.elapsed = 0;
 
 		// normalized pointer (-1..1)
@@ -63,11 +67,24 @@ export class CameraRig {
 		}
 
 		this.elapsed += delta;
-		this.camera.position.z = 3 + Math.sin(this.elapsed * 0.5);
+		this.camera.position.z =
+			this.baseZ + Math.sin(this.elapsed * this.bobSpeed) * this.bobAmplitude;
 
 		// Always look at target
 		this.camera.lookAt(this.target);
-		this.camera.rotation.z = Math.sin(this.elapsed * 0.5) * 0.1;
+		this.camera.rotation.z =
+			Math.sin(this.elapsed * this.bobSpeed) * this.rollAmplitude;
+	}
+
+	applySettings(settings = {}) {
+		this.target.set(settings.targetX, settings.targetY, settings.targetZ);
+		this.xLimit = [settings.xMin, settings.xMax];
+		this.yLimit = [settings.yMin, settings.yMax];
+		this.damping = settings.damping;
+		this.baseZ = settings.z;
+		this.bobAmplitude = settings.bobAmplitude;
+		this.bobSpeed = settings.bobSpeed;
+		this.rollAmplitude = settings.rollAmplitude;
 	}
 
 	dispose() {

@@ -1,4 +1,12 @@
 import * as THREE from "three";
+import { DEFAULT_SCENE_SETTINGS } from "../config/sceneControls";
+
+const TONE_MAPPING = {
+	none: THREE.NoToneMapping,
+	linear: THREE.LinearToneMapping,
+	reinhard: THREE.ReinhardToneMapping,
+	aces: THREE.ACESFilmicToneMapping,
+};
 
 class WebGLContext {
 	static getInstance(container) {
@@ -16,7 +24,8 @@ class WebGLContext {
 		this.renderer = null;
 		this.canvas = null;
 		this.fullScreenDimensions = { width: 0, height: 0 };
-		this.pixelRatio = Math.min(window.devicePixelRatio, 2.0);
+		this.pixelRatioCap = DEFAULT_SCENE_SETTINGS.renderer.pixelRatioCap;
+		this.pixelRatio = Math.min(window.devicePixelRatio, this.pixelRatioCap);
 	}
 
 	async init() {
@@ -74,9 +83,21 @@ class WebGLContext {
 	}
 
 	onResize(width, height) {
-		this.pixelRatio = Math.min(window.devicePixelRatio, 2);
+		this.fullScreenDimensions = { width, height };
+		this.pixelRatio = Math.min(window.devicePixelRatio, this.pixelRatioCap);
 		this.renderer.setSize(width, height);
 		this.renderer.setPixelRatio(this.pixelRatio);
+	}
+
+	applySettings(settings = DEFAULT_SCENE_SETTINGS) {
+		const rendererSettings =
+			settings.renderer ?? DEFAULT_SCENE_SETTINGS.renderer;
+		this.pixelRatioCap = rendererSettings.pixelRatioCap;
+		this.pixelRatio = Math.min(window.devicePixelRatio, this.pixelRatioCap);
+		this.renderer.setPixelRatio(this.pixelRatio);
+		this.renderer.toneMapping =
+			TONE_MAPPING[rendererSettings.toneMapping] ?? THREE.ACESFilmicToneMapping;
+		this.renderer.toneMappingExposure = rendererSettings.exposure;
 	}
 
 	dispose() {

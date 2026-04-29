@@ -198,7 +198,7 @@ export default function SceneSidebar({ activeSceneId, onSceneSelect }) {
 		<div className="dark pointer-events-none fixed inset-0 z-40 text-[12px] tracking-normal text-foreground">
 			<aside
 				className={cn(
-					"pointer-events-auto fixed top-14 right-2 bottom-2 flex w-80 flex-col overflow-hidden rounded-lg border border-border/60 bg-card/85 shadow-2xl shadow-black/40 backdrop-blur-md transition-[transform,opacity] duration-300 ease-out",
+					"pointer-events-auto fixed top-14 right-2 bottom-2 flex w-80 flex-col overflow-hidden rounded-lg border border-border/60 bg-card/85 shadow-2xl shadow-black/40 backdrop-blur-md transition-[transform,opacity] duration-300 ease-out max-sm:top-[calc(50lvh+0.25rem)] max-sm:left-2 max-sm:w-auto",
 					isOpen
 						? "translate-x-0 opacity-100"
 						: "translate-x-[calc(100%+0.75rem)] opacity-0",
@@ -357,8 +357,8 @@ export default function SceneSidebar({ activeSceneId, onSceneSelect }) {
 				variant="secondary"
 				size="icon-sm"
 				className={cn(
-					"pointer-events-auto fixed right-2 bottom-6 bg-card/85 text-muted-foreground shadow-xl shadow-black/35 backdrop-blur-md transition-[transform,color,background-color] duration-300 ease-out hover:bg-muted hover:text-foreground",
-					isOpen ? "-translate-x-82" : "translate-x-0",
+					"pointer-events-auto fixed right-2 bottom-6 bg-card/85 text-muted-foreground shadow-xl shadow-black/35 backdrop-blur-md transition-[transform,color,background-color] duration-300 ease-out hover:bg-muted hover:text-foreground max-sm:bottom-3",
+					isOpen ? "-translate-x-82 max-sm:translate-x-0" : "translate-x-0",
 				)}
 				aria-label={isOpen ? "Hide scenes sidebar" : "Show scenes sidebar"}
 				aria-expanded={isOpen}
