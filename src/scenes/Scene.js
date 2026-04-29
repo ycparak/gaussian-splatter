@@ -2,6 +2,7 @@ import * as THREE from "three";
 import WebGLContext from "../core/WebGLContext";
 import { CameraRig } from "../utils/CameraRig";
 import PlyLoader from "../utils/PlyLoader";
+import { defaultScene } from "./availableScenes";
 
 export default class Scene {
 	constructor() {
@@ -51,7 +52,14 @@ export default class Scene {
 	}
 
 	async #addObjects() {
-		this.plyLoader = new PlyLoader(`${import.meta.env.BASE_URL}tokyo.min.ply`, {
+		this.loadAsset(defaultScene);
+	}
+
+	loadAsset(asset) {
+		if (!asset?.url) return;
+
+		this.plyLoader?.dispose();
+		this.plyLoader = new PlyLoader(asset.url, {
 			renderer: this.context.renderer,
 			size: 0.05,
 			flowFieldInfluence: 0.5,
@@ -66,12 +74,20 @@ export default class Scene {
 				if (this.isDisposed) return;
 
 				points.rotation.x = Math.PI;
+				this.scene.remove(...this.scene.children);
 				this.scene.add(points);
 				const loader = document.getElementById("loader");
 				if (loader) {
 					loader.style.opacity = "0";
 					setTimeout(() => loader.remove(), 700);
 				}
+			},
+			onError: (error) => {
+				window.dispatchEvent(
+					new CustomEvent("scene-load-error", {
+						detail: { id: asset.id, message: error.message },
+					}),
+				);
 			},
 		});
 	}

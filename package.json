@@ -6,8 +6,10 @@
 	"packageManager": "bun@1.2.13",
 	"scripts": {
 		"dev": "vite",
+		"server": "bun server/generator.mjs",
 		"build": "vite build",
 		"preview": "vite preview",
+		"pack:pgs": "node scripts/pack-pgs.mjs",
 		"check": "biome check .",
 		"check:write": "biome check --write .",
 		"format": "biome format --write .",

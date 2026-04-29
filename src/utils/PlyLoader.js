@@ -52,6 +52,64 @@ export default class PlyLoader {
 	}
 
 	#parse(buffer) {
+		if (this.#isPgs(buffer)) {
+			return this.#parsePgs(buffer);
+		}
+
+		return this.#parsePly(buffer);
+	}
+
+	#parsePgs(buffer) {
+		const dataView = new DataView(buffer);
+		const version = dataView.getUint32(4, true);
+		const vertexCount = dataView.getUint32(8, true);
+		const colorMode = dataView.getUint8(12);
+
+		if (version !== 1) {
+			throw new Error(`Unsupported PGS version: ${version}`);
+		}
+
+		if (colorMode !== 1) {
+			throw new Error(`Unsupported PGS color mode: ${colorMode}`);
+		}
+
+		const min = [
+			dataView.getFloat32(16, true),
+			dataView.getFloat32(20, true),
+			dataView.getFloat32(24, true),
+		];
+		const max = [
+			dataView.getFloat32(28, true),
+			dataView.getFloat32(32, true),
+			dataView.getFloat32(36, true),
+		];
+
+		const positions = new Float32Array(vertexCount * 3);
+		const colors = new Float32Array(vertexCount * 3);
+		let offset = 40;
+
+		for (let i = 0; i < vertexCount; i++) {
+			const i3 = i * 3;
+			const qx = dataView.getUint16(offset, true);
+			const qy = dataView.getUint16(offset + 2, true);
+			const qz = dataView.getUint16(offset + 4, true);
+			const rgb565 = dataView.getUint16(offset + 6, true);
+
+			positions[i3] = this.#unquantize(qx, min[0], max[0]);
+			positions[i3 + 1] = this.#unquantize(qy, min[1], max[1]);
+			positions[i3 + 2] = this.#unquantize(qz, min[2], max[2]);
+
+			colors[i3] = ((rgb565 >> 11) & 0x1f) / 31;
+			colors[i3 + 1] = ((rgb565 >> 5) & 0x3f) / 63;
+			colors[i3 + 2] = (rgb565 & 0x1f) / 31;
+
+			offset += 8;
+		}
+
+		return { positions, colors, vertexCount };
+	}
+
+	#parsePly(buffer) {
 		const headerEnd = this.#findHeaderEnd(buffer);
 		const headerText = new TextDecoder().decode(
 			new Uint8Array(buffer, 0, headerEnd),
@@ -99,6 +157,21 @@ export default class PlyLoader {
 		}
 
 		return { positions, colors, vertexCount };
+	}
+
+	#isPgs(buffer) {
+		const bytes = new Uint8Array(buffer, 0, 4);
+		return (
+			bytes[0] === 0x50 &&
+			bytes[1] === 0x47 &&
+			bytes[2] === 0x53 &&
+			bytes[3] === 0x31
+		);
+	}
+
+	#unquantize(value, min, max) {
+		if (max <= min) return min;
+		return min + (value / 65535) * (max - min);
 	}
 
 	#setupGPGPU(positions, vertexCount) {
@@ -241,18 +314,17 @@ export default class PlyLoader {
 	}
 
 	async #readWithProgress(response) {
-		let body = response.body;
+		const body = response.body;
 		const contentLength = parseInt(
 			response.headers.get("Content-Length") || "0",
 			10,
 		);
-
-		if (this.url.endsWith(".gz")) {
-			body = body.pipeThrough(new DecompressionStream("gzip"));
-		}
+		const isBrowserDecoded =
+			response.headers.get("Content-Encoding")?.includes("gzip") ?? false;
 
 		if (!contentLength || !this.onProgress) {
-			return new Response(body).arrayBuffer();
+			const buffer = await new Response(body).arrayBuffer();
+			return this.#maybeDecompress(buffer, isBrowserDecoded);
 		}
 
 		const reader = body.getReader();
@@ -273,7 +345,19 @@ export default class PlyLoader {
 			result.set(chunk, offset);
 			offset += chunk.length;
 		}
-		return result.buffer;
+		return this.#maybeDecompress(result.buffer, isBrowserDecoded);
+	}
+
+	async #maybeDecompress(buffer, isBrowserDecoded) {
+		if (!this.url.endsWith(".gz") || isBrowserDecoded) return buffer;
+		if (!("DecompressionStream" in window)) {
+			throw new Error("This browser does not support gzip decompression");
+		}
+
+		const stream = new Blob([buffer])
+			.stream()
+			.pipeThrough(new DecompressionStream("gzip"));
+		return new Response(stream).arrayBuffer();
 	}
 
 	#findHeaderEnd(buffer) {

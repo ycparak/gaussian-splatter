@@ -26,6 +26,10 @@ class Three {
 		this.#addResizeListener();
 	}
 
+	loadScene(asset) {
+		this.scene?.loadAsset(asset);
+	}
+
 	#animate() {
 		if (this.isDisposed) return;
 

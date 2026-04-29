@@ -1,10 +1,12 @@
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import SceneSidebar from "./components/SceneSidebar";
 import Three from "./core/Three";
+import { defaultScene } from "./scenes/availableScenes";
 
 export default function App() {
 	const containerRef = useRef(null);
 	const threeRef = useRef(null);
+	const [activeSceneId, setActiveSceneId] = useState(defaultScene.id);
 
 	useEffect(() => {
 		if (!containerRef.current || threeRef.current) return;
@@ -19,10 +21,18 @@ export default function App() {
 		};
 	}, []);
 
+	const handleSceneSelect = useCallback((scene) => {
+		setActiveSceneId(scene.id);
+		threeRef.current?.loadScene(scene);
+	}, []);
+
 	return (
 		<>
 			<div ref={containerRef} className="h-lvh w-full" />
-			<SceneSidebar />
+			<SceneSidebar
+				activeSceneId={activeSceneId}
+				onSceneSelect={handleSceneSelect}
+			/>
 			<div
 				id="loader"
 				className="fixed inset-0 z-50 flex items-center justify-center bg-black transition-opacity duration-700"
