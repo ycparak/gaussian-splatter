@@ -12,6 +12,16 @@ export default class PlyLoader {
 		this.material = null;
 		this.gpgpu = null;
 		this.particlesVariable = null;
+		this.gpgpuSize = 0;
+		this.vertexCount = 0;
+		this.positions = null;
+		this.colors = null;
+		this.baseTexture = null;
+		this.targetTexture = null;
+		this.isReady = false;
+		this.morph = null;
+		this.transitionAbortController = null;
+		this.transitionId = 0;
 
 		this.onLoad = options.onLoad ?? null;
 		this.onProgress = options.onProgress ?? null;
@@ -23,25 +33,26 @@ export default class PlyLoader {
 		this.flowFieldInfluence = options.flowFieldInfluence ?? 0.5;
 		this.flowFieldStrength = options.flowFieldStrength ?? 2.0;
 		this.flowFieldFrequency = options.flowFieldFrequency ?? 0.5;
+		this.morphDuration = options.morphDuration ?? 1.45;
 		this.renderer = options.renderer ?? null;
 
 		this.#load();
 	}
 
 	#load() {
-		fetch(this.url, { signal: this.abortController.signal })
-			.then((response) => {
-				if (!response.ok) throw new Error(`HTTP ${response.status}`);
-				return this.#readWithProgress(response);
-			})
-			.then((buffer) => {
+		this.#loadData(this.url, {
+			signal: this.abortController.signal,
+			onProgress: this.onProgress,
+		})
+			.then(({ positions, colors, vertexCount }) => {
 				if (this.isDisposed) return;
 
-				const { positions, colors, vertexCount } = this.#parse(buffer);
-				if (this.isDisposed) return;
-
+				this.positions = positions;
+				this.colors = colors;
+				this.vertexCount = vertexCount;
 				this.#setupGPGPU(positions, vertexCount);
 				this.#setupParticles(positions, colors, vertexCount);
+				this.isReady = true;
 				this.onLoad?.(this.points);
 			})
 			.catch((error) => {
@@ -49,6 +60,47 @@ export default class PlyLoader {
 				console.error("PLY load error:", error);
 				this.onError?.(error);
 			});
+	}
+
+	transitionTo(url, options = {}) {
+		if (this.isDisposed || !this.isReady) return false;
+
+		this.transitionAbortController?.abort();
+		this.transitionAbortController = new AbortController();
+		const transitionId = ++this.transitionId;
+
+		this.#loadData(url, {
+			signal: this.transitionAbortController.signal,
+			onProgress: options.onProgress,
+		})
+			.then((targetData) => {
+				if (this.isDisposed || transitionId !== this.transitionId) return;
+
+				this.#startMorph(targetData, {
+					duration: options.duration ?? this.morphDuration,
+					onLoad: options.onLoad,
+					url,
+				});
+			})
+			.catch((error) => {
+				if (error.name === "AbortError") return;
+				console.error("PLY transition error:", error);
+				options.onError?.(error);
+			});
+
+		return true;
+	}
+
+	async #loadData(url, options = {}) {
+		const response = await fetch(url, { signal: options.signal });
+		if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+		const buffer = await this.#readWithProgress(
+			response,
+			url,
+			options.onProgress,
+		);
+		return this.#parse(buffer);
 	}
 
 	#parse(buffer) {
@@ -181,27 +233,12 @@ export default class PlyLoader {
 
 		this.gpgpu = new GPUComputationRenderer(size, size, this.renderer);
 
-		// base texture holds the original positions
-		const baseTexture = this.gpgpu.createTexture();
-		// particles texture holds the current state
-		const particlesTexture = this.gpgpu.createTexture();
-
-		for (let i = 0; i < size * size; i++) {
-			const i3 = i * 3;
-			const i4 = i * 4;
-
-			if (i < vertexCount) {
-				baseTexture.image.data[i4 + 0] = positions[i3 + 0];
-				baseTexture.image.data[i4 + 1] = positions[i3 + 1];
-				baseTexture.image.data[i4 + 2] = positions[i3 + 2];
-				baseTexture.image.data[i4 + 3] = Math.random();
-
-				particlesTexture.image.data[i4 + 0] = positions[i3 + 0];
-				particlesTexture.image.data[i4 + 1] = positions[i3 + 1];
-				particlesTexture.image.data[i4 + 2] = positions[i3 + 2];
-				particlesTexture.image.data[i4 + 3] = Math.random();
-			}
-		}
+		this.baseTexture = this.#createPositionTexture(positions, vertexCount);
+		this.targetTexture = this.baseTexture;
+		const particlesTexture = this.#createPositionTexture(
+			positions,
+			vertexCount,
+		);
 
 		this.particlesVariable = this.gpgpu.addVariable(
 			"uParticles",
@@ -216,7 +253,13 @@ export default class PlyLoader {
 		// uniforms
 		this.particlesVariable.material.uniforms.uTime = { value: 0 };
 		this.particlesVariable.material.uniforms.uDeltaTime = { value: 0 };
-		this.particlesVariable.material.uniforms.uBase = { value: baseTexture };
+		this.particlesVariable.material.uniforms.uBase = {
+			value: this.baseTexture,
+		};
+		this.particlesVariable.material.uniforms.uTarget = {
+			value: this.targetTexture,
+		};
+		this.particlesVariable.material.uniforms.uMorphProgress = { value: 0 };
 		this.particlesVariable.material.uniforms.uFlowFieldInfluence = {
 			value: this.flowFieldInfluence,
 		};
@@ -254,6 +297,10 @@ export default class PlyLoader {
 			new THREE.BufferAttribute(particlesUv, 2),
 		);
 		geometry.setAttribute("aColor", new THREE.BufferAttribute(colors, 3));
+		geometry.setAttribute(
+			"aTargetColor",
+			new THREE.BufferAttribute(new Float32Array(colors), 3),
+		);
 		geometry.setAttribute("aSize", new THREE.BufferAttribute(sizesArray, 1));
 
 		this.material = new THREE.ShaderMaterial({
@@ -272,6 +319,7 @@ export default class PlyLoader {
 					value: this.gpgpu.getCurrentRenderTarget(this.particlesVariable)
 						.texture,
 				},
+				uMorphProgress: { value: 0 },
 			},
 			transparent: true,
 			depthWrite: true,
@@ -279,7 +327,17 @@ export default class PlyLoader {
 			fog: true,
 		});
 
-		this.points = new THREE.Points(geometry, this.material);
+		if (this.points) {
+			const oldGeometry = this.points.geometry;
+			const oldMaterial = this.points.material;
+			this.points.geometry = geometry;
+			this.points.material = this.material;
+			oldGeometry?.dispose();
+			oldMaterial?.dispose();
+		} else {
+			this.points = new THREE.Points(geometry, this.material);
+		}
+
 		this.points.frustumCulled = false;
 	}
 
@@ -289,6 +347,8 @@ export default class PlyLoader {
 
 		this.particlesVariable.material.uniforms.uTime.value = elapsed;
 		this.particlesVariable.material.uniforms.uDeltaTime.value = delta;
+
+		this.#updateMorph(delta);
 
 		this.gpgpu.compute();
 
@@ -308,12 +368,15 @@ export default class PlyLoader {
 	dispose() {
 		this.isDisposed = true;
 		this.abortController.abort();
+		this.transitionAbortController?.abort();
 		this.points?.geometry?.dispose();
 		this.material?.dispose();
 		this.gpgpu?.dispose();
+		this.baseTexture?.dispose();
+		if (this.targetTexture !== this.baseTexture) this.targetTexture?.dispose();
 	}
 
-	async #readWithProgress(response) {
+	async #readWithProgress(response, url, onProgress) {
 		const body = response.body;
 		const contentLength = parseInt(
 			response.headers.get("Content-Length") || "0",
@@ -322,9 +385,9 @@ export default class PlyLoader {
 		const isBrowserDecoded =
 			response.headers.get("Content-Encoding")?.includes("gzip") ?? false;
 
-		if (!contentLength || !this.onProgress) {
+		if (!contentLength || !onProgress) {
 			const buffer = await new Response(body).arrayBuffer();
-			return this.#maybeDecompress(buffer, isBrowserDecoded);
+			return this.#maybeDecompress(buffer, url, isBrowserDecoded);
 		}
 
 		const reader = body.getReader();
@@ -336,7 +399,7 @@ export default class PlyLoader {
 			if (done) break;
 			chunks.push(value);
 			received += value.length;
-			this.onProgress(Math.min(received / contentLength, 1));
+			onProgress(Math.min(received / contentLength, 1));
 		}
 
 		const result = new Uint8Array(received);
@@ -345,11 +408,11 @@ export default class PlyLoader {
 			result.set(chunk, offset);
 			offset += chunk.length;
 		}
-		return this.#maybeDecompress(result.buffer, isBrowserDecoded);
+		return this.#maybeDecompress(result.buffer, url, isBrowserDecoded);
 	}
 
-	async #maybeDecompress(buffer, isBrowserDecoded) {
-		if (!this.url.endsWith(".gz") || isBrowserDecoded) return buffer;
+	async #maybeDecompress(buffer, url, isBrowserDecoded) {
+		if (!url.endsWith(".gz") || isBrowserDecoded) return buffer;
 		if (!("DecompressionStream" in window)) {
 			throw new Error("This browser does not support gzip decompression");
 		}
@@ -358,6 +421,150 @@ export default class PlyLoader {
 			.stream()
 			.pipeThrough(new DecompressionStream("gzip"));
 		return new Response(stream).arrayBuffer();
+	}
+
+	#createPositionTexture(positions, vertexCount) {
+		const texture = this.gpgpu.createTexture();
+		const particleCount = this.gpgpuSize * this.gpgpuSize;
+
+		for (let i = 0; i < particleCount; i++) {
+			const i3 = i * 3;
+			const i4 = i * 4;
+
+			if (i < vertexCount) {
+				texture.image.data[i4 + 0] = positions[i3 + 0];
+				texture.image.data[i4 + 1] = positions[i3 + 1];
+				texture.image.data[i4 + 2] = positions[i3 + 2];
+				texture.image.data[i4 + 3] = Math.random();
+			}
+		}
+
+		return texture;
+	}
+
+	#startMorph(targetData, options) {
+		const transitionVertexCount = Math.max(
+			this.vertexCount,
+			targetData.vertexCount,
+		);
+
+		if (transitionVertexCount !== this.vertexCount) {
+			const sourceData = this.#resampleData(
+				{
+					positions: this.positions,
+					colors: this.colors,
+					vertexCount: this.vertexCount,
+				},
+				transitionVertexCount,
+			);
+
+			this.gpgpu?.dispose();
+			this.baseTexture?.dispose();
+			if (this.targetTexture !== this.baseTexture)
+				this.targetTexture?.dispose();
+
+			this.positions = sourceData.positions;
+			this.colors = sourceData.colors;
+			this.vertexCount = transitionVertexCount;
+			this.#setupGPGPU(sourceData.positions, transitionVertexCount);
+			this.#setupParticles(
+				sourceData.positions,
+				sourceData.colors,
+				transitionVertexCount,
+			);
+		}
+
+		const normalizedTarget = this.#resampleData(targetData, this.vertexCount);
+		if (this.targetTexture !== this.baseTexture) this.targetTexture?.dispose();
+		this.targetTexture = this.#createPositionTexture(
+			normalizedTarget.positions,
+			this.vertexCount,
+		);
+
+		this.particlesVariable.material.uniforms.uTarget.value = this.targetTexture;
+		this.particlesVariable.material.uniforms.uMorphProgress.value = 0;
+		this.material.uniforms.uMorphProgress.value = 0;
+		this.#setTargetColors(normalizedTarget.colors);
+
+		this.morph = {
+			elapsed: 0,
+			duration: Math.max(options.duration, 0.001),
+			targetData: normalizedTarget,
+			onLoad: options.onLoad,
+			url: options.url,
+		};
+	}
+
+	#updateMorph(delta) {
+		if (!this.morph) return;
+
+		this.morph.elapsed += delta;
+		const progress = Math.min(this.morph.elapsed / this.morph.duration, 1);
+		this.particlesVariable.material.uniforms.uMorphProgress.value = progress;
+		this.material.uniforms.uMorphProgress.value = progress;
+
+		if (progress >= 1) this.#finishMorph();
+	}
+
+	#finishMorph() {
+		const morph = this.morph;
+		this.morph = null;
+		this.url = morph.url;
+		this.positions = morph.targetData.positions;
+		this.colors = morph.targetData.colors;
+		this.vertexCount = morph.targetData.vertexCount;
+
+		const previousBaseTexture = this.baseTexture;
+		this.baseTexture = this.#createPositionTexture(
+			this.positions,
+			this.vertexCount,
+		);
+		if (this.targetTexture !== previousBaseTexture)
+			this.targetTexture?.dispose();
+		this.targetTexture = this.baseTexture;
+		previousBaseTexture?.dispose();
+
+		this.particlesVariable.material.uniforms.uBase.value = this.baseTexture;
+		this.particlesVariable.material.uniforms.uTarget.value = this.targetTexture;
+		this.particlesVariable.material.uniforms.uMorphProgress.value = 0;
+		this.material.uniforms.uMorphProgress.value = 0;
+		this.#setBaseColors(this.colors);
+		this.#setTargetColors(this.colors);
+		morph.onLoad?.(this.points);
+	}
+
+	#resampleData(data, vertexCount) {
+		if (data.vertexCount === vertexCount) return data;
+
+		const positions = new Float32Array(vertexCount * 3);
+		const colors = new Float32Array(vertexCount * 3);
+
+		for (let i = 0; i < vertexCount; i++) {
+			const sourceIndex = Math.floor((i / vertexCount) * data.vertexCount);
+			const sourceI3 = sourceIndex * 3;
+			const i3 = i * 3;
+
+			positions[i3 + 0] = data.positions[sourceI3 + 0];
+			positions[i3 + 1] = data.positions[sourceI3 + 1];
+			positions[i3 + 2] = data.positions[sourceI3 + 2];
+			colors[i3 + 0] = data.colors[sourceI3 + 0];
+			colors[i3 + 1] = data.colors[sourceI3 + 1];
+			colors[i3 + 2] = data.colors[sourceI3 + 2];
+		}
+
+		return { positions, colors, vertexCount };
+	}
+
+	#setBaseColors(colors) {
+		const colorAttribute = this.points.geometry.getAttribute("aColor");
+		colorAttribute.array.set(colors);
+		colorAttribute.needsUpdate = true;
+	}
+
+	#setTargetColors(colors) {
+		const colorAttribute = this.points.geometry.getAttribute("aTargetColor");
+		colorAttribute.array.set(colors);
+		colorAttribute.needsUpdate = true;
 	}
 
 	#findHeaderEnd(buffer) {

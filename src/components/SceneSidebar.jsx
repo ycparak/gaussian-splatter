@@ -29,6 +29,7 @@ export default function SceneSidebar({ activeSceneId, onSceneSelect }) {
 	const [job, setJob] = useState(null);
 	const [message, setMessage] = useState("");
 	const fileInputRef = useRef(null);
+	const jobPollControllerRef = useRef(null);
 
 	const scenes = [...bundledScenes, ...generatedScenes];
 	const isBusy =
@@ -62,6 +63,28 @@ export default function SceneSidebar({ activeSceneId, onSceneSelect }) {
 	}, []);
 
 	useEffect(() => {
+		function handleSceneLoadError(event) {
+			const detail = event.detail;
+			setMessage(
+				detail?.message
+					? `Could not load ${detail.id}: ${detail.message}`
+					: "Could not load scene.",
+			);
+		}
+
+		window.addEventListener("scene-load-error", handleSceneLoadError);
+		return () => {
+			window.removeEventListener("scene-load-error", handleSceneLoadError);
+		};
+	}, []);
+
+	useEffect(() => {
+		return () => {
+			jobPollControllerRef.current?.abort();
+		};
+	}, []);
+
+	useEffect(() => {
 		if (!selectedFile) {
 			setPreviewUrl("");
 			return;
@@ -73,37 +96,6 @@ export default function SceneSidebar({ activeSceneId, onSceneSelect }) {
 		return () => URL.revokeObjectURL(objectUrl);
 	}, [selectedFile]);
 
-	useEffect(() => {
-		if (!job?.id || FINAL_JOB_STATUSES.has(job.status)) return;
-
-		const controller = new AbortController();
-		const intervalId = window.setInterval(async () => {
-			try {
-				const nextJob = await fetchJob(job.id, controller.signal);
-				setJob(nextJob);
-				setMessage(statusMessage(nextJob));
-
-				if (nextJob.status === "done" && nextJob.scene) {
-					startTransition(() => {
-						setGeneratedScenes((currentScenes) =>
-							mergeScene(currentScenes, nextJob.scene),
-						);
-					});
-					onSceneSelect(nextJob.scene);
-				}
-			} catch (error) {
-				if (error.name !== "AbortError") {
-					setMessage(error.message);
-				}
-			}
-		}, 1500);
-
-		return () => {
-			controller.abort();
-			window.clearInterval(intervalId);
-		};
-	}, [job?.id, job?.status, onSceneSelect]);
-
 	function handlePickFile(file) {
 		if (!file) return;
 
@@ -112,6 +104,8 @@ export default function SceneSidebar({ activeSceneId, onSceneSelect }) {
 			return;
 		}
 
+		jobPollControllerRef.current?.abort();
+		jobPollControllerRef.current = null;
 		setSelectedFile(file);
 		setJob(null);
 		setMessage("");
@@ -123,11 +117,17 @@ export default function SceneSidebar({ activeSceneId, onSceneSelect }) {
 		const formData = new FormData();
 		formData.append("image", selectedFile);
 
+		let controller = null;
 		try {
 			setMessage("Uploading image...");
+			jobPollControllerRef.current?.abort();
+
+			controller = new AbortController();
+			jobPollControllerRef.current = controller;
 			const response = await fetch("/api/scenes", {
 				method: "POST",
 				body: formData,
+				signal: controller.signal,
 			});
 			const payload = await response.json();
 			if (!response.ok) {
@@ -135,9 +135,39 @@ export default function SceneSidebar({ activeSceneId, onSceneSelect }) {
 			}
 			setJob(payload.job);
 			setMessage(statusMessage(payload.job));
+			await followGenerationJob(payload.job, controller.signal);
 		} catch (error) {
-			setMessage(error.message);
+			if (error.name !== "AbortError") {
+				setMessage(error.message);
+			}
+		} finally {
+			if (jobPollControllerRef.current === controller) {
+				jobPollControllerRef.current = null;
+			}
 		}
+	}
+
+	async function followGenerationJob(initialJob, signal) {
+		let nextJob = initialJob;
+
+		while (nextJob?.id && !FINAL_JOB_STATUSES.has(nextJob.status)) {
+			await wait(1500, signal);
+			nextJob = await fetchJob(nextJob.id, signal);
+			setJob(nextJob);
+			setMessage(statusMessage(nextJob));
+		}
+
+		if (nextJob?.status !== "done") return;
+
+		const scene = await resolveCompletedScene(nextJob, signal);
+		if (!scene) {
+			throw new Error("Generation completed but no scene was returned.");
+		}
+
+		startTransition(() => {
+			setGeneratedScenes((currentScenes) => mergeScene(currentScenes, scene));
+		});
+		onSceneSelect(scene);
 	}
 
 	async function refreshScenes(options = {}) {
@@ -375,6 +405,37 @@ async function fetchJob(id, signal) {
 		throw new Error(payload.error || "Could not read job status.");
 	}
 	return payload.job;
+}
+
+async function resolveCompletedScene(job, signal) {
+	if (job.scene?.url) return job.scene;
+
+	const response = await fetch("/api/scenes", { signal });
+	const payload = await response.json();
+	if (!response.ok) {
+		throw new Error(payload.error || "Could not load generated scenes.");
+	}
+
+	return payload.scenes?.find((scene) => scene.id === job.sceneId) ?? null;
+}
+
+function wait(ms, signal) {
+	return new Promise((resolve, reject) => {
+		if (signal.aborted) {
+			reject(new DOMException("Aborted", "AbortError"));
+			return;
+		}
+
+		const timeoutId = window.setTimeout(resolve, ms);
+		signal.addEventListener(
+			"abort",
+			() => {
+				window.clearTimeout(timeoutId);
+				reject(new DOMException("Aborted", "AbortError"));
+			},
+			{ once: true },
+		);
+	});
 }
 
 function statusMessage(job) {

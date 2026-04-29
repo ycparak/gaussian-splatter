@@ -151,6 +151,7 @@ The bundled sample was reduced from about `28.3 MB` as `.ply` to about `7.5 MB` 
 ```bash
 bun run dev        # Start Vite
 bun run server     # Start local SHARP generation API
+bun run start      # Start both dev server and API together
 bun run build      # Production build
 bun run preview    # Preview production build
 bun run check      # Run Biome checks

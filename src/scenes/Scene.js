@@ -15,6 +15,7 @@ export default class Scene {
 		this.scene = null;
 		this.envMap = null;
 		this.isDisposed = false;
+		this.activeAssetId = null;
 		this.#init();
 	}
 
@@ -57,6 +58,33 @@ export default class Scene {
 
 	loadAsset(asset) {
 		if (!asset?.url) return;
+		if (asset.id === this.activeAssetId && this.plyLoader?.isReady) return;
+
+		const onProgress = (progress) => {
+			const pct = Math.round(progress * 100);
+			const bar = document.getElementById("loader-bar");
+			if (bar) bar.style.width = `${pct}%`;
+		};
+		const onError = (error) => {
+			window.dispatchEvent(
+				new CustomEvent("scene-load-error", {
+					detail: { id: asset.id, message: error.message },
+				}),
+			);
+		};
+
+		if (this.plyLoader?.isReady) {
+			const didStartTransition = this.plyLoader.transitionTo(asset.url, {
+				duration: 1.45,
+				onProgress,
+				onLoad: () => {
+					if (!this.isDisposed) this.activeAssetId = asset.id;
+				},
+				onError,
+			});
+
+			if (didStartTransition) return;
+		}
 
 		this.plyLoader?.dispose();
 		this.plyLoader = new PlyLoader(asset.url, {
@@ -65,31 +93,26 @@ export default class Scene {
 			flowFieldInfluence: 0.5,
 			flowFieldStrength: 1.2,
 			flowFieldFrequency: 0.5,
-			onProgress: (progress) => {
-				const pct = Math.round(progress * 100);
-				const bar = document.getElementById("loader-bar");
-				if (bar) bar.style.width = `${pct}%`;
-			},
-			onLoad: (points) => {
-				if (this.isDisposed) return;
-
-				points.rotation.x = Math.PI;
-				this.scene.remove(...this.scene.children);
-				this.scene.add(points);
-				const loader = document.getElementById("loader");
-				if (loader) {
-					loader.style.opacity = "0";
-					setTimeout(() => loader.remove(), 700);
-				}
-			},
-			onError: (error) => {
-				window.dispatchEvent(
-					new CustomEvent("scene-load-error", {
-						detail: { id: asset.id, message: error.message },
-					}),
-				);
-			},
+			morphDuration: 1.45,
+			onProgress,
+			onLoad: (points) => this.#showLoadedPoints(points, asset),
+			onError,
 		});
+	}
+
+	#showLoadedPoints(points, asset) {
+		if (this.isDisposed) return;
+
+		points.rotation.x = Math.PI;
+		this.scene.remove(...this.scene.children);
+		this.scene.add(points);
+		this.activeAssetId = asset.id;
+
+		const loader = document.getElementById("loader");
+		if (loader) {
+			loader.style.opacity = "0";
+			setTimeout(() => loader.remove(), 700);
+		}
 	}
 
 	#calculateAspectRatio() {

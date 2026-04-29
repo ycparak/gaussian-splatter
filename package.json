@@ -7,6 +7,7 @@
 	"scripts": {
 		"dev": "vite",
 		"server": "bun server/generator.mjs",
+		"start": "bun run dev & bun run server & wait",
 		"build": "vite build",
 		"preview": "vite preview",
 		"pack:pgs": "node scripts/pack-pgs.mjs",
