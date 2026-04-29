@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import SceneSidebar from "./components/SceneSidebar";
 import Three from "./core/Three";
 
 export default function App() {
@@ -21,6 +22,7 @@ export default function App() {
 	return (
 		<>
 			<div ref={containerRef} className="h-lvh w-full" />
+			<SceneSidebar />
 			<div
 				id="loader"
 				className="fixed inset-0 z-50 flex items-center justify-center bg-black transition-opacity duration-700"
