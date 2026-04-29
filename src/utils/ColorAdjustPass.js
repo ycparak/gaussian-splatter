@@ -1,6 +1,6 @@
 import { ShaderPass } from "three/examples/jsm/postprocessing/ShaderPass";
-import vertexShader from "../shaders/colorPass.vert";
 import fragmentShader from "../shaders/colorPass.frag";
+import vertexShader from "../shaders/colorPass.vert";
 
 const ColorAdjustShader = {
 	uniforms: {

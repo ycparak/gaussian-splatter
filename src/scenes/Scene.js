@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import WebGLContext from "../core/WebGLContext";
-import PlyLoader from "../utils/PlyLoader";
 import { CameraRig } from "../utils/CameraRig";
+import PlyLoader from "../utils/PlyLoader";
 
 export default class Scene {
 	constructor() {
@@ -25,7 +25,7 @@ export default class Scene {
 	}
 
 	#setContext() {
-		this.context = new WebGLContext();
+		this.context = WebGLContext.getInstance();
 	}
 
 	#setupScene() {
@@ -42,7 +42,6 @@ export default class Scene {
 
 	#setupCameraRig() {
 		this.cameraRig = new CameraRig(this.camera, {
-			target: new THREE.Vector3(0, 0, 0),
 			xLimit: [-10.25, 10.25],
 			yLimit: [-1.25, 0.25],
 			target: new THREE.Vector3(0, 0, -5),
@@ -82,8 +81,8 @@ export default class Scene {
 	}
 
 	animate(delta, elapsed) {
-		this.cameraRig && this.cameraRig.update(delta);
-		this.plyLoader && this.plyLoader.update(delta, elapsed);
+		this.cameraRig?.update(delta);
+		this.plyLoader?.update(delta, elapsed);
 	}
 
 	onResize(width, height) {
@@ -94,6 +93,6 @@ export default class Scene {
 		this.camera.aspect = this.aspectRatio;
 		this.camera.updateProjectionMatrix();
 
-		this.plyLoader && this.plyLoader.onResize(width, height);
+		this.plyLoader?.onResize(width, height);
 	}
 }

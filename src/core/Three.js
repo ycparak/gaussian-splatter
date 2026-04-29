@@ -1,7 +1,7 @@
 import * as THREE from "three";
-import WebGLContext from "./WebGLContext";
-import PostProcessing from "./PostProcessing";
 import Scene from "../scenes/Scene";
+import PostProcessing from "./PostProcessing";
+import WebGLContext from "./WebGLContext";
 
 class Three {
 	constructor(container) {
@@ -11,7 +11,7 @@ class Three {
 	}
 
 	run() {
-		this.context = new WebGLContext(this.container);
+		this.context = WebGLContext.getInstance(this.container);
 		this.context.init();
 		this.scene = new Scene();
 		this.postProcessing = new PostProcessing(

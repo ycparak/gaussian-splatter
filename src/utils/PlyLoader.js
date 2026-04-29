@@ -1,8 +1,8 @@
 import * as THREE from "three";
 import { GPUComputationRenderer } from "three/examples/jsm/misc/GPUComputationRenderer";
 import gpgpuParticlesShader from "../shaders/gpgpu/particles.glsl";
-import vertexShader from "../shaders/particles.vert";
 import fragmentShader from "../shaders/particles.frag";
+import vertexShader from "../shaders/particles.vert";
 
 export default class PlyLoader {
 	constructor(url, options = {}) {
@@ -150,7 +150,7 @@ export default class PlyLoader {
 		this.gpgpu.init();
 	}
 
-	#setupParticles(positions, colors, vertexCount) {
+	#setupParticles(_positions, colors, vertexCount) {
 		const size = this.gpgpuSize;
 
 		// UV coordinates to sample the GPGPU texture
@@ -231,7 +231,10 @@ export default class PlyLoader {
 
 	async #readWithProgress(response) {
 		let body = response.body;
-		const contentLength = parseInt(response.headers.get("Content-Length") || "0");
+		const contentLength = parseInt(
+			response.headers.get("Content-Length") || "0",
+			10,
+		);
 
 		if (this.url.endsWith(".gz")) {
 			body = body.pipeThrough(new DecompressionStream("gzip"));
@@ -301,7 +304,7 @@ export default class PlyLoader {
 
 			if (parts[0] === "element") {
 				if (parts[1] === "vertex") {
-					vertexCount = parseInt(parts[2]);
+					vertexCount = parseInt(parts[2], 10);
 					inVertexElement = true;
 				} else {
 					inVertexElement = false;

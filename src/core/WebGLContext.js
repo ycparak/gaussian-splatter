@@ -1,18 +1,20 @@
 import * as THREE from "three";
 
 class WebGLContext {
-	constructor(container) {
-		if (!!WebGLContext.instance) {
-			return WebGLContext.instance;
+	static getInstance(container) {
+		if (!WebGLContext.instance) {
+			WebGLContext.instance = new WebGLContext(container);
 		}
 
+		return WebGLContext.instance;
+	}
+
+	constructor(container) {
 		this.container = container;
 		this.renderer = null;
 		this.canvas = null;
 		this.fullScreenDimensions = { width: 0, height: 0 };
 		this.pixelRatio = Math.min(window.devicePixelRatio, 2.0);
-
-		WebGLContext.instance = this;
 	}
 
 	async init() {

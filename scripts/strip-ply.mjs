@@ -1,6 +1,6 @@
 #!/usr/bin/env node
-import { readFileSync, writeFileSync } from "fs";
-import { gzipSync } from "zlib";
+import { readFileSync, writeFileSync } from "node:fs";
+import { gzipSync } from "node:zlib";
 
 const KEEP = ["x", "y", "z", "f_dc_0", "f_dc_1", "f_dc_2"];
 
@@ -24,13 +24,22 @@ let vertexCount = 0;
 const props = [];
 let offset = 0;
 let inVertex = false;
-const sizes = { float: 4, double: 8, int: 4, uint: 4, short: 2, ushort: 2, char: 1, uchar: 1 };
+const sizes = {
+	float: 4,
+	double: 8,
+	int: 4,
+	uint: 4,
+	short: 2,
+	ushort: 2,
+	char: 1,
+	uchar: 1,
+};
 
 for (const line of lines) {
 	const parts = line.trim().split(/\s+/);
 	if (parts[0] === "element") {
 		inVertex = parts[1] === "vertex";
-		if (inVertex) vertexCount = parseInt(parts[2]);
+		if (inVertex) vertexCount = parseInt(parts[2], 10);
 	}
 	if (parts[0] === "property" && inVertex) {
 		const type = parts[1];
@@ -60,7 +69,12 @@ const dataBuf = Buffer.alloc(vertexCount * dstStride);
 for (let i = 0; i < vertexCount; i++) {
 	let dstOff = 0;
 	for (const p of kept) {
-		buf.copy(dataBuf, i * dstStride + dstOff, dataStart + i * srcStride + p.offset, dataStart + i * srcStride + p.offset + p.size);
+		buf.copy(
+			dataBuf,
+			i * dstStride + dstOff,
+			dataStart + i * srcStride + p.offset,
+			dataStart + i * srcStride + p.offset + p.size,
+		);
 		dstOff += p.size;
 	}
 }
@@ -70,7 +84,7 @@ const outPath = file.replace(/\.ply$/, ".min.ply");
 writeFileSync(outPath, out);
 
 const gz = gzipSync(out, { level: 9 });
-writeFileSync(outPath + ".gz", gz);
+writeFileSync(`${outPath}.gz`, gz);
 
 const origMB = (buf.length / 1e6).toFixed(1);
 const stripMB = (out.length / 1e6).toFixed(1);
