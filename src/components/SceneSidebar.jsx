@@ -54,7 +54,7 @@ export default function SceneSidebar() {
         <div className="flex min-h-0 flex-1 flex-col gap-3 p-3">
           <button
             type="button"
-            className="flex h-[88px] shrink-0 flex-col items-center justify-center gap-2 rounded-md border border-dashed border-border/55 bg-muted/20 text-muted-foreground transition-colors hover:bg-muted/30 hover:text-foreground"
+            className="flex h-23 shrink-0 flex-col items-center justify-center gap-2 rounded-md border border-dashed border-border/55 bg-muted/20 text-muted-foreground transition-colors hover:bg-muted/30 hover:text-foreground"
             aria-label="Upload scene image"
           >
             <Upload className="size-5 opacity-65" aria-hidden="true" />
