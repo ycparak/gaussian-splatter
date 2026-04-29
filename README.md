@@ -2,6 +2,10 @@
 
 A browser-based Three.js particle viewer and prototype image-to-point-cloud generator powered by Apple's SHARP model, i.e. `Image -> Apple's ML SHARP -> Point Cloud -> Three JS GPGPU -> Particle System` based on [three-ml-sharp](https://github.com/cullenwebber/three-ml-sharp).
 
+<div style="border: 1px solid #FFF9ED; border-left: 4px solid #FFA72D; padding: 16px; background-color: #FFF9ED; color: #CA6700;">
+  <strong style="font-weight: 500;">Epistemic Status: Entirely agentically engineered with only minimal oversite</strong>
+</div>
+
 ## What This Project Does
 
 - Renders large point clouds in the browser with Three.js and `GPUComputationRenderer`.
