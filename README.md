@@ -1,8 +1,6 @@
 # Particle Generator
 
-A browser-based Three.js particle viewer and prototype image-to-point-cloud generator powered by Apple's SHARP model.
-
-The app lets you load optimized point-cloud assets in the browser, view them as animated GPU particles, and optionally upload an image to a local generation server that runs SHARP and converts the output into a smaller web-friendly asset.
+A browser-based Three.js particle viewer and prototype image-to-point-cloud generator powered by Apple's SHARP model, i.e. `Image -> Apple's ML SHARP -> Point Cloud -> Three JS GPGPU -> Particle System` based on [three-ml-sharp](https://github.com/cullenwebber/three-ml-sharp).
 
 ## What This Project Does
 
@@ -10,7 +8,8 @@ The app lets you load optimized point-cloud assets in the browser, view them as 
 - Uses a React/Vite UI for scene selection, image upload, and generation status.
 - Supports Apple's SHARP CLI output (`.ply`) through a local Bun server.
 - Converts SHARP-generated `.ply` files into a compact `.pgs.gz` format for faster web loading.
-- Ships with a prepacked sample asset: `public/tokyo.pgs.gz`.
+- Ships with a couple prepacked sample assets.
+- Adds controls to manipulate the scene, particles, lighting, bloom, color, camera and renderer.
 
 This is a prototype, not a production service. The browser viewer runs fully in the browser, but SHARP inference does not. SHARP is currently a Python CLI/model workflow, so generation must run on a local machine or backend server with SHARP installed.
 
@@ -45,7 +44,7 @@ bun install
 
 ## Run The Viewer Only
 
-This starts the Vite frontend. The bundled `tokyo` scene should load without SHARP installed.
+This starts the Vite frontend. The bundled scenes should load without SHARP installed.
 
 ```bash
 bun run dev
@@ -182,4 +181,3 @@ public/                      Browser-served sample assets
 - `sharp render` and SHARP trajectory rendering require CUDA; this app only needs `sharp predict`.
 - On Apple Silicon macOS, SHARP prediction may use MPS, but performance depends on the local Python/PyTorch setup.
 - Do not commit `.generated/` outputs unless you intentionally want to publish generated assets.
-
