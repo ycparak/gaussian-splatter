@@ -159,21 +159,24 @@ bun run preview    # Preview production build
 bun run check      # Run Biome checks
 bun run format     # Format files with Biome
 bun run lint       # Run Biome lint
+bun test           # Run unit tests
+bunx tsc --noEmit  # Run strict TypeScript checks
 bun run pack:pgs   # Convert PLY to compact .pgs.gz
 ```
 
 ## Project Structure
 
 ```text
-src/App.jsx                  React shell
-src/components/SceneSidebar.jsx
+src/App.tsx                  React shell
+src/components/SceneSidebar.tsx
 src/core/                    Three.js renderer, loop, post-processing
-src/scenes/Scene.js          Scene setup and active asset loading
-src/utils/PlyLoader.js       PLY / PGS loading and particle setup
+src/scenes/Scene.ts          Scene setup and active asset loading
+src/utils/PlyLoader.ts       PLY / PGS loading and particle setup
 src/shaders/                 Particle and GPGPU shaders
-server/generator.mjs         Local upload + SHARP generation API
-scripts/pgs-format.mjs       PLY to PGS packing logic
-scripts/pack-pgs.mjs         CLI wrapper for packing assets
+server/generator.ts          Local upload + SHARP generation API
+scripts/pgs-format.ts        PLY to PGS packing logic
+scripts/pack-pgs.ts          CLI wrapper for packing assets
+shared/                      Shared types and pure helpers
 public/                      Browser-served sample assets
 ```
 
