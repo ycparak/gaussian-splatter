@@ -17,6 +17,10 @@ interface SceneOptions {
 	sceneLoadCallbacks?: SceneLoadCallbacks;
 }
 
+interface LoadAssetOptions {
+	force?: boolean;
+}
+
 export default class Scene {
 	context: WebGLContext;
 	camera: THREE.PerspectiveCamera;
@@ -27,6 +31,7 @@ export default class Scene {
 	aspectRatio = 1;
 	isDisposed = false;
 	activeAssetId: string | null = null;
+	activeAsset: SceneAsset | null = null;
 	settings: SceneSettings;
 	onStatsChange: ((stats: SceneStats) => void) | null;
 	sceneLoadCallbacks: SceneLoadCallbacks;
@@ -46,9 +51,15 @@ export default class Scene {
 		}
 	}
 
-	loadAsset(asset: SceneAsset | null): void {
+	loadAsset(asset: SceneAsset | null, options: LoadAssetOptions = {}): void {
 		if (!asset?.url || this.isDisposed) return;
-		if (asset.id === this.activeAssetId && this.plyLoader?.isReady) return;
+		if (
+			!options.force &&
+			asset.id === this.activeAssetId &&
+			this.plyLoader?.isReady
+		) {
+			return;
+		}
 
 		this.sceneLoadCallbacks.onLoadStart?.(asset);
 		const onProgress = (progress: number) => {
@@ -58,7 +69,7 @@ export default class Scene {
 			this.sceneLoadCallbacks.onLoadError?.(asset, error);
 		};
 
-		if (this.plyLoader?.isReady) {
+		if (!options.force && this.plyLoader?.isReady) {
 			const didStartTransition = this.plyLoader.transitionTo(asset.url, {
 				duration: this.settings.particles.morphDuration,
 				onProgress,
@@ -70,6 +81,8 @@ export default class Scene {
 		}
 
 		this.plyLoader?.dispose();
+		this.plyLoader = null;
+		this.scene.remove(...this.scene.children);
 		const renderer = this.context.renderer;
 		if (!renderer) {
 			throw new Error("WebGL renderer is not available");
@@ -82,6 +95,10 @@ export default class Scene {
 			onLoad: (points) => this.#showLoadedPoints(points, asset),
 			onError,
 		});
+	}
+
+	reloadAsset(): void {
+		this.loadAsset(this.activeAsset ?? defaultScene, { force: true });
 	}
 
 	animate(delta: number, elapsed: number): void {
@@ -201,6 +218,7 @@ export default class Scene {
 		if (this.isDisposed) return;
 
 		this.activeAssetId = asset.id;
+		this.activeAsset = asset;
 		this.plyLoader?.applySettings(this.settings);
 		const stats = this.getSceneStats();
 		this.onStatsChange?.(stats);

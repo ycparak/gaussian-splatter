@@ -148,6 +148,7 @@ export default class WebGLContext {
 		this.renderer = new THREE.WebGLRenderer({
 			canvas: this.canvas,
 			antialias: DEFAULT_SCENE_SETTINGS.renderer.antialias,
+			preserveDrawingBuffer: true,
 		});
 		this.renderer.shadowMap.enabled = false;
 		this.renderer.toneMapping = THREE.ACESFilmicToneMapping;

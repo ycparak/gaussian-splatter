@@ -26,6 +26,8 @@ export default class Three {
 	sceneLoadCallbacks: SceneLoadCallbacks;
 	readonly clock = new THREE.Clock();
 	animationFrameId: number | null = null;
+	elapsedTime = 0;
+	isPaused = false;
 	isDisposed = false;
 	#unsubscribeResize: (() => void) | null = null;
 
@@ -44,7 +46,7 @@ export default class Three {
 		this.scene = new Scene({
 			settings: this.settings,
 			onStatsChange: () => this.#emitStatsChange(),
-			sceneLoadCallbacks: this.sceneLoadCallbacks,
+			sceneLoadCallbacks: this.#createSceneLoadCallbacks(),
 		});
 
 		const renderer = this.context.renderer;
@@ -71,7 +73,56 @@ export default class Three {
 	}
 
 	loadScene(asset: SceneAsset): void {
+		this.elapsedTime = 0;
 		this.scene?.loadAsset(asset);
+	}
+
+	reloadScene(): void {
+		this.elapsedTime = 0;
+		this.scene?.reloadAsset();
+		this.renderStillFrame();
+	}
+
+	setPaused(isPaused: boolean): void {
+		if (this.isDisposed || this.isPaused === isPaused) return;
+
+		this.isPaused = isPaused;
+
+		if (isPaused) {
+			if (this.animationFrameId !== null) {
+				cancelAnimationFrame(this.animationFrameId);
+				this.animationFrameId = null;
+			}
+			return;
+		}
+
+		this.clock.getDelta();
+		this.#animate();
+	}
+
+	togglePaused(): boolean {
+		this.setPaused(!this.isPaused);
+		return this.isPaused;
+	}
+
+	renderStillFrame(): void {
+		if (this.isDisposed || !this.scene || !this.postProcessing) return;
+
+		this.scene.animate(0, this.elapsedTime);
+		this.postProcessing.render();
+	}
+
+	async downloadSnapshot(
+		fileName = this.#createSnapshotFileName(),
+	): Promise<void> {
+		const canvas = this.context?.canvas;
+		if (!canvas) {
+			throw new Error("WebGL canvas is not available");
+		}
+
+		this.renderStillFrame();
+		const blob = await this.#canvasToPngBlob(canvas);
+		this.#downloadBlob(blob, fileName);
 	}
 
 	applySettings(settings: SceneSettings = DEFAULT_SCENE_SETTINGS): void {
@@ -113,12 +164,64 @@ export default class Three {
 
 	#animate(): void {
 		if (this.isDisposed || !this.scene || !this.postProcessing) return;
+		if (this.isPaused) {
+			this.animationFrameId = null;
+			return;
+		}
 
 		const delta = this.clock.getDelta();
-		const elapsed = this.clock.elapsedTime;
-		this.scene.animate(delta, elapsed);
+		this.elapsedTime += delta;
+		this.scene.animate(delta, this.elapsedTime);
 		this.postProcessing.render();
 		this.animationFrameId = requestAnimationFrame(() => this.#animate());
+	}
+
+	#createSceneLoadCallbacks(): SceneLoadCallbacks {
+		return {
+			...this.sceneLoadCallbacks,
+			onLoadSuccess: (asset, stats) => {
+				this.sceneLoadCallbacks.onLoadSuccess?.(asset, stats);
+				this.renderStillFrame();
+			},
+		};
+	}
+
+	#createSnapshotFileName(): string {
+		const sceneName = this.scene?.activeAsset?.name ?? "scene";
+		const slug = sceneName
+			.toLowerCase()
+			.replace(/[^a-z0-9]+/g, "-")
+			.replace(/^-+|-+$/g, "");
+		const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+		return `${slug || "scene"}-${timestamp}.png`;
+	}
+
+	#canvasToPngBlob(canvas: HTMLCanvasElement): Promise<Blob> {
+		return new Promise((resolve, reject) => {
+			try {
+				canvas.toBlob((blob) => {
+					if (blob) {
+						resolve(blob);
+						return;
+					}
+
+					reject(new Error("PNG snapshot could not be created"));
+				}, "image/png");
+			} catch (error) {
+				reject(error);
+			}
+		});
+	}
+
+	#downloadBlob(blob: Blob, fileName: string): void {
+		const url = URL.createObjectURL(blob);
+		const link = document.createElement("a");
+		link.href = url;
+		link.download = fileName;
+		document.body.append(link);
+		link.click();
+		link.remove();
+		window.setTimeout(() => URL.revokeObjectURL(url), 0);
 	}
 
 	#emitStatsChange(): void {

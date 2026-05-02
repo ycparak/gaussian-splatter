@@ -7,6 +7,7 @@ import { useState } from "react";
 import {
   DownloadIcon,
   PauseIcon,
+  PlayIcon,
   RecordIcon,
   ReloadIcon,
 } from "@/src/components/icons";
@@ -19,6 +20,8 @@ interface Tab {
   label: string;
   width: number;
   icon: ReactNode;
+  onClick?: () => void;
+  disabled?: boolean;
 }
 
 const IDLE_WIDTH = 126;
@@ -35,35 +38,54 @@ const labelTransition = {
   duration: 0.34,
 } as const;
 
-const tabs = [
-  {
-    id: "record",
-    label: "Record",
-    width: 197,
-    icon: <RecordIcon className="size-4" />,
-  },
-  {
-    id: "download",
-    label: "Download PNG",
-    width: 241,
-    icon: <DownloadIcon className="size-4" />,
-  },
-  {
-    id: "pause",
-    label: "Pause",
-    width: 191,
-    icon: <PauseIcon className="size-4" />,
-  },
-  {
-    id: "reload",
-    label: "Reload",
-    width: 198,
-    icon: <ReloadIcon className="size-4" />,
-  },
-] satisfies Tab[];
+interface ActionPanelProps {
+  isPaused: boolean;
+  onDownloadSnapshot: () => void;
+  onReload: () => void;
+  onTogglePause: () => void;
+}
 
-export default function ActionPanel() {
+export default function ActionPanel({
+  isPaused,
+  onDownloadSnapshot,
+  onReload,
+  onTogglePause,
+}: ActionPanelProps) {
   const [activeTab, setActiveTab] = useState<TabId | null>(null);
+  const tabs = [
+    {
+      id: "record",
+      label: "Record",
+      width: 197,
+      icon: <RecordIcon className="size-4" />,
+      disabled: true,
+    },
+    {
+      id: "download",
+      label: "Download PNG",
+      width: 238,
+      icon: <DownloadIcon className="size-4" />,
+      onClick: onDownloadSnapshot,
+    },
+    {
+      id: "pause",
+      label: isPaused ? "Play" : "Pause",
+      width: isPaused ? 178 : 188,
+      icon: isPaused ? (
+        <PlayIcon className="size-3.5" />
+      ) : (
+        <PauseIcon className="size-4" />
+      ),
+      onClick: onTogglePause,
+    },
+    {
+      id: "reload",
+      label: "Reload scene",
+      width: 230,
+      icon: <ReloadIcon className="size-4" />,
+      onClick: onReload,
+    },
+  ] satisfies Tab[];
   const activeTabConfig = tabs.find((tab) => tab.id === activeTab);
 
   return (
@@ -129,8 +151,11 @@ export default function ActionPanel() {
             key={tab.id}
             type="button"
             aria-label={tab.label}
+            aria-pressed={tab.id === "pause" ? isPaused : undefined}
+            disabled={tab.disabled}
             onMouseEnter={() => setActiveTab(tab.id)}
             onFocus={() => setActiveTab(tab.id)}
+            onClick={tab.onClick}
             whileTap={{ scale: 0.925 }}
             style={{
               borderRadius: "7px",
@@ -139,6 +164,7 @@ export default function ActionPanel() {
             className={cn(
               "relative flex size-7.5 items-center justify-center text-neutral-400 outline-none transition-colors focus-visible:ring-0",
               activeTab === tab.id && "text-neutral-300",
+              tab.disabled && "cursor-not-allowed opacity-45",
             )}
           >
             {activeTab === tab.id ? (
