@@ -1,7 +1,7 @@
 #!/usr/bin/env bun
 import { readFileSync, writeFileSync } from "node:fs";
 import { gzipSync } from "node:zlib";
-import { PLY_TYPE_SIZES } from "../shared/pgs";
+import { PLY_TYPE_SIZES } from "@/shared/pgs";
 
 const KEEP = ["x", "y", "z", "f_dc_0", "f_dc_1", "f_dc_2"];
 

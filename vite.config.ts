@@ -6,7 +6,7 @@ import react from "@vitejs/plugin-react";
 import type { Plugin } from "vite";
 import { defineConfig } from "vite";
 import glsl from "vite-plugin-glsl";
-import type { SceneAsset } from "./shared/types";
+import type { SceneAsset } from "@/shared/types";
 
 const bundledScenesModuleId = "virtual:bundled-scenes";
 const resolvedBundledScenesModuleId = `\0${bundledScenesModuleId}`;
@@ -22,7 +22,7 @@ export default defineConfig({
 	},
 	resolve: {
 		alias: {
-			"@": fileURLToPath(new URL("./src", import.meta.url)),
+			"@": fileURLToPath(new URL(".", import.meta.url)),
 		},
 	},
 });

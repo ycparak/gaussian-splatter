@@ -4,22 +4,20 @@ import {
   applySceneLoadSucceeded,
   applySceneSelectionRequested,
   createInitialSceneSelectionState,
-} from "../shared/sceneSelection";
+} from "@/shared/sceneSelection";
 import type {
   SceneAsset,
   SceneLoadCallbacks,
   SceneStats,
-} from "../shared/types";
-
-// import SceneControlsSidebar from "./components/old/SceneControlsSidebar";
-// import SceneSidebar from "./components/old/SceneSidebar";
-
+} from "@/shared/types";
+// import SceneControlsSidebar from "@/src/components/old/SceneControlsSidebar";
+// import SceneSidebar from "@/src/components/old/SceneSidebar";
 import {
   cloneSceneSettings,
   DEFAULT_SCENE_SETTINGS,
-} from "./config/sceneControls";
-import Three from "./core/Three";
-import { defaultScene } from "./scenes/availableScenes";
+} from "@/src/config/sceneControls";
+import Three from "@/src/core/Three";
+import { defaultScene } from "@/src/scenes/availableScenes";
 
 interface LoaderState {
   visible: boolean;
@@ -45,8 +43,8 @@ const INITIAL_LOADER_STATE: LoaderState = defaultScene
 export default function App() {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const threeRef = useRef<Three | null>(null);
-  const initialSceneSettingsRef = useRef(cloneSceneSettings());
   const hasCompletedInitialLoadRef = useRef(!defaultScene);
+  const initialSceneSettingsRef = useRef(cloneSceneSettings());
   const [sceneSettings, setSceneSettings] = useState(
     initialSceneSettingsRef.current,
   );
@@ -87,10 +85,10 @@ export default function App() {
           });
         }
       },
-      onLoadSuccess: (asset, stats) => {
+      onLoadSuccess: (_asset, stats) => {
         hasCompletedInitialLoadRef.current = true;
         setSelectionState((currentState) =>
-          applySceneLoadSucceeded(currentState, asset),
+          applySceneLoadSucceeded(currentState, _asset),
         );
         setSceneStats(stats);
         setLoaderState({
@@ -134,16 +132,17 @@ export default function App() {
   }, [sceneSettings]);
 
   // const handleSceneSelect = useCallback((scene: SceneAsset) => {
-  //   threeRef.current?.loadScene(scene);
+  // 	threeRef.current?.loadScene(scene);
   // }, []);
 
   // const resetSceneSettings = useCallback(() => {
-  //   setSceneSettings(cloneSceneSettings(DEFAULT_SCENE_SETTINGS));
+  // 	setSceneSettings(cloneSceneSettings(DEFAULT_SCENE_SETTINGS));
   // }, []);
 
   return (
     <>
       <div ref={containerRef} className="fixed inset-0 overflow-hidden" />
+
       {/*<SceneControlsSidebar
 				settings={sceneSettings}
 				onSettingsChange={setSceneSettings}
@@ -153,7 +152,8 @@ export default function App() {
 				activeSceneId={selectionState.activeSceneId}
 				onSceneSelect={handleSceneSelect}
 				sceneErrorMessage={selectionState.errorMessage}
-			/>*/}
+      />*/}
+
       <div
         id="loader"
         className={`fixed inset-0 z-50 flex items-center justify-center bg-black transition-opacity duration-700 ${

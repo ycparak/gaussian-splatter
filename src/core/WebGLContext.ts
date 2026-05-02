@@ -1,6 +1,6 @@
 import * as THREE from "three";
-import type { SceneSettings } from "../../shared/types";
-import { DEFAULT_SCENE_SETTINGS } from "../config/sceneControls";
+import type { SceneSettings } from "@/shared/types";
+import { DEFAULT_SCENE_SETTINGS } from "@/src/config/sceneControls";
 
 const TONE_MAPPING: Record<string, THREE.ToneMapping> = {
 	none: THREE.NoToneMapping,

@@ -1,8 +1,8 @@
 import * as THREE from "three";
 import { ShaderPass } from "three/examples/jsm/postprocessing/ShaderPass.js";
-import type { ColorSettings } from "../../shared/types";
-import fragmentShader from "../shaders/colorPass.frag";
-import vertexShader from "../shaders/colorPass.vert";
+import type { ColorSettings } from "@/shared/types";
+import fragmentShader from "@/src/shaders/colorPass.frag";
+import vertexShader from "@/src/shaders/colorPass.vert";
 
 const ColorAdjustShader = {
 	uniforms: {

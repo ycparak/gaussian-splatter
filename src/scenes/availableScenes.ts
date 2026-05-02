@@ -1,5 +1,5 @@
 import { bundledScenes as rawBundledScenes } from "virtual:bundled-scenes";
-import type { SceneAsset } from "../../shared/types";
+import type { SceneAsset } from "@/shared/types";
 
 export const bundledScenes = rawBundledScenes as SceneAsset[];
 

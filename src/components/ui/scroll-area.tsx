@@ -2,7 +2,7 @@
 
 import { ScrollArea as ScrollAreaPrimitive } from "@base-ui/react/scroll-area";
 import type { ComponentProps } from "react";
-import { cn } from "@/lib/utils";
+import { cn } from "@/src/lib/utils";
 
 type ScrollAreaProps = ComponentProps<typeof ScrollAreaPrimitive.Root>;
 type ScrollBarProps = ComponentProps<typeof ScrollAreaPrimitive.Scrollbar>;

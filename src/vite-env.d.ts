@@ -1,7 +1,7 @@
 /// <reference types="vite/client" />
 
 declare module "virtual:bundled-scenes" {
-	import type { SceneAsset } from "../shared/types";
+	import type { SceneAsset } from "@/shared/types";
 
 	export const bundledScenes: SceneAsset[];
 }

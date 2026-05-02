@@ -1,4 +1,4 @@
-import type { SceneAsset } from "./types";
+import type { SceneAsset } from "@/shared/types";
 
 export interface SceneSelectionState {
 	activeSceneId: string | null;

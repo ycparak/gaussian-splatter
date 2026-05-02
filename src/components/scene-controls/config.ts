@@ -1,4 +1,4 @@
-import type { SceneSettings, ToneMappingMode } from "../../../shared/types";
+import type { SceneSettings, ToneMappingMode } from "@/shared/types";
 
 export type SettingsGroup = keyof SceneSettings;
 

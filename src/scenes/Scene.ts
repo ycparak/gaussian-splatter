@@ -3,13 +3,13 @@ import type {
 	SceneLoadCallbacks,
 	SceneSettings,
 	SceneStats,
-} from "../../shared/types";
-import { DEFAULT_SCENE_SETTINGS } from "../config/sceneControls";
-import WebGLContext from "../core/WebGLContext";
-import { CameraRig } from "../utils/CameraRig";
-import PlyLoader from "../utils/PlyLoader";
-import type { SceneAsset } from "./availableScenes";
-import { defaultScene } from "./availableScenes";
+} from "@/shared/types";
+import { DEFAULT_SCENE_SETTINGS } from "@/src/config/sceneControls";
+import WebGLContext from "@/src/core/WebGLContext";
+import type { SceneAsset } from "@/src/scenes/availableScenes";
+import { defaultScene } from "@/src/scenes/availableScenes";
+import { CameraRig } from "@/src/utils/CameraRig";
+import PlyLoader from "@/src/utils/PlyLoader";
 
 interface SceneOptions {
 	settings?: SceneSettings;

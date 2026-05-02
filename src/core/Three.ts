@@ -3,12 +3,12 @@ import type {
 	SceneLoadCallbacks,
 	SceneSettings,
 	SceneStats,
-} from "../../shared/types";
-import { DEFAULT_SCENE_SETTINGS } from "../config/sceneControls";
-import type { SceneAsset } from "../scenes/availableScenes";
-import Scene from "../scenes/Scene";
-import PostProcessing from "./PostProcessing";
-import WebGLContext from "./WebGLContext";
+} from "@/shared/types";
+import { DEFAULT_SCENE_SETTINGS } from "@/src/config/sceneControls";
+import PostProcessing from "@/src/core/PostProcessing";
+import WebGLContext from "@/src/core/WebGLContext";
+import type { SceneAsset } from "@/src/scenes/availableScenes";
+import Scene from "@/src/scenes/Scene";
 
 interface ThreeOptions {
 	settings?: SceneSettings;

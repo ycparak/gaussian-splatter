@@ -1,4 +1,4 @@
-import type { SceneSettings } from "../../shared/types";
+import type { SceneSettings } from "@/shared/types";
 
 export const DEFAULT_SCENE_SETTINGS = {
 	particles: {

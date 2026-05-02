@@ -7,12 +7,12 @@ import {
 	PGS_VERSION,
 	PLY_TYPE_SIZES,
 	SH_C0,
-} from "../../shared/pgs";
-import type { ParsedPointAsset, SceneSettings } from "../../shared/types";
-import { DEFAULT_SCENE_SETTINGS } from "../config/sceneControls";
-import gpgpuParticlesShader from "../shaders/gpgpu/particles.glsl";
-import fragmentShader from "../shaders/particles.frag";
-import vertexShader from "../shaders/particles.vert";
+} from "@/shared/pgs";
+import type { ParsedPointAsset, SceneSettings } from "@/shared/types";
+import { DEFAULT_SCENE_SETTINGS } from "@/src/config/sceneControls";
+import gpgpuParticlesShader from "@/src/shaders/gpgpu/particles.glsl";
+import fragmentShader from "@/src/shaders/particles.frag";
+import vertexShader from "@/src/shaders/particles.vert";
 
 type PointsMesh = THREE.Points<THREE.BufferGeometry, THREE.ShaderMaterial>;
 type GpuVariable = ReturnType<GPUComputationRenderer["addVariable"]>;

@@ -1,5 +1,5 @@
 #!/usr/bin/env bun
-import { packPlyFile } from "./pgs-format";
+import { packPlyFile } from "@/scripts/pgs-format";
 
 const [inputPath, outputPath] = process.argv.slice(2);
 
