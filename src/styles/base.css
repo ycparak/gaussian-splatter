@@ -1,49 +1,50 @@
 @layer base {
-	*,
-	*::before,
-	*::after {
-		box-sizing: border-box;
-	}
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
 
-	* {
-		@apply border-border outline-ring/50;
-	}
+  * {
+    /*@apply border-border outline-ring/50;*/
+  }
 
-	html {
-		font-family: var(--font-sans);
-		background: var(--background);
-		color: var(--foreground);
-		text-rendering: optimizeLegibility;
-		-webkit-font-smoothing: antialiased;
-		-moz-osx-font-smoothing: grayscale;
-	}
+  html {
+    font-family: var(--font-sans);
+    font-weight: 600;
+    background: var(--background);
+    color: var(--color-neutral-400);
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
 
-	body {
-		min-height: 100vh;
-		margin: 0;
-		background:
-			radial-gradient(
-				circle at top left,
-				color-mix(in oklch, var(--primary) 16%, transparent),
-				transparent 38%
-			),
-			radial-gradient(
-				circle at bottom right,
-				color-mix(in oklch, var(--accent) 12%, transparent),
-				transparent 34%
-			),
-			var(--background);
-		color: var(--foreground);
-		font-family: var(--font-sans);
-	}
+  body {
+    min-height: 100vh;
+    margin: 0;
+    background:
+      radial-gradient(
+        circle at top left,
+        color-mix(in oklch, var(--primary) 16%, transparent),
+        transparent 38%
+      ),
+      radial-gradient(
+        circle at bottom right,
+        color-mix(in oklch, var(--accent) 12%, transparent),
+        transparent 34%
+      ),
+      var(--background);
+    color: var(--foreground);
+    font-family: var(--font-sans);
+  }
 
-	::selection {
-		background: color-mix(in oklch, var(--primary) 24%, transparent);
-		color: var(--primary-foreground);
-	}
+  ::selection {
+    background: color-mix(in oklch, var(--primary) 24%, transparent);
+    color: var(--primary-foreground);
+  }
 
-	#app {
-		min-height: 100vh;
-		isolation: isolate;
-	}
+  #app {
+    min-height: 100vh;
+    isolation: isolate;
+  }
 }
