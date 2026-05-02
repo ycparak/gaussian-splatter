@@ -159,7 +159,6 @@ bun run preview    # Preview production build
 bun run check      # Run Biome checks
 bun run format     # Format files with Biome
 bun run lint       # Run Biome lint
-bun test           # Run unit tests
 bunx tsc --noEmit  # Run strict TypeScript checks
 bun run pack:pgs   # Convert PLY to compact .pgs.gz
 ```

@@ -31,10 +31,9 @@ This file gives coding agents the project context and commands needed to work sa
 - Apply Biome formatter, import organization, and safe fixes: `bun run check:write`
 - Format only: `bun run format`
 - Lint only: `bun run lint`
-- Run unit tests: `bun test`
 - Run TypeScript without emitting files: `bunx tsc --noEmit`
 
-Before finishing code changes, run `bun run check`, `bun run build`, `bun test`, and `bunx tsc --noEmit`. If you change rendering, shaders, asset loading, or responsive behavior, also run the dev server and verify the scene loads in a browser with the loader disappearing after the initial asset finishes loading.
+Before finishing code changes, run `bun run check`, `bun run build`, and `bunx tsc --noEmit`. If you change rendering, shaders, asset loading, or responsive behavior, also run the dev server and verify the scene loads in a browser with the loader disappearing after the initial asset finishes loading.
 
 ## Code Style Guidelines
 
