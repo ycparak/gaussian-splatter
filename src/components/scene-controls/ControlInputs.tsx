@@ -66,22 +66,6 @@ export function ControlRow({
 	);
 }
 
-export function ReadOnlyRow({
-	label,
-	value,
-}: {
-	label: string;
-	value: string;
-}) {
-	return (
-		<ControlRow label={label}>
-			<span className="justify-self-end font-mono text-[11px] text-foreground">
-				{value}
-			</span>
-		</ControlRow>
-	);
-}
-
 export function NumberSlider({
 	label,
 	value,
