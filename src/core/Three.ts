@@ -16,6 +16,11 @@ interface ThreeOptions {
 	sceneLoadCallbacks?: SceneLoadCallbacks;
 }
 
+interface RecordingOptions {
+	fileName?: string;
+	frameRate?: number;
+}
+
 export default class Three {
 	readonly container: HTMLElement;
 	context: WebGLContext | null = null;
@@ -28,7 +33,13 @@ export default class Three {
 	animationFrameId: number | null = null;
 	elapsedTime = 0;
 	isPaused = false;
+	isRecording = false;
 	isDisposed = false;
+	#mediaRecorder: MediaRecorder | null = null;
+	#recordingChunks: Blob[] = [];
+	#recordingFileName = "";
+	#recordingMimeType = "";
+	#recordingStream: MediaStream | null = null;
 	#unsubscribeResize: (() => void) | null = null;
 
 	constructor(container: HTMLElement, options: ThreeOptions = {}) {
@@ -125,6 +136,70 @@ export default class Three {
 		this.#downloadBlob(blob, fileName);
 	}
 
+	startRecording(options: RecordingOptions = {}): void {
+		if (this.isDisposed || this.isRecording) return;
+
+		const canvas = this.context?.canvas;
+		if (!canvas) {
+			throw new Error("WebGL canvas is not available");
+		}
+
+		if (!("MediaRecorder" in window)) {
+			throw new Error("Scene recording is not supported by this browser");
+		}
+
+		const mimeType = this.#getSupportedRecordingMimeType();
+		if (!mimeType) {
+			throw new Error("MP4 scene recording is not supported by this browser");
+		}
+
+		this.renderStillFrame();
+		const stream = canvas.captureStream(options.frameRate ?? 60);
+		const mediaRecorder = new MediaRecorder(stream, {
+			mimeType,
+			videoBitsPerSecond: 12_000_000,
+		});
+
+		this.#recordingChunks = [];
+		this.#recordingFileName =
+			options.fileName ?? this.#createCaptureFileName("mp4");
+		this.#recordingMimeType = mimeType;
+		this.#recordingStream = stream;
+		this.#mediaRecorder = mediaRecorder;
+
+		mediaRecorder.addEventListener("dataavailable", (event) => {
+			if (event.data.size > 0) {
+				this.#recordingChunks.push(event.data);
+			}
+		});
+		mediaRecorder.addEventListener("stop", () => {
+			const blob = new Blob(this.#recordingChunks, {
+				type: this.#recordingMimeType,
+			});
+			this.#downloadBlob(blob, this.#recordingFileName);
+			this.#clearRecordingState();
+		});
+		mediaRecorder.addEventListener("error", (event) => {
+			console.error("Scene recording failed:", event);
+			this.#clearRecordingState();
+		});
+
+		mediaRecorder.start(1000);
+		this.isRecording = true;
+	}
+
+	stopRecording(): void {
+		const mediaRecorder = this.#mediaRecorder;
+		if (!mediaRecorder || mediaRecorder.state === "inactive") return;
+
+		try {
+			mediaRecorder.requestData();
+		} catch {
+			// Some browsers throw if data is already being flushed during stop.
+		}
+		mediaRecorder.stop();
+	}
+
 	applySettings(settings: SceneSettings = DEFAULT_SCENE_SETTINGS): void {
 		this.settings = settings;
 		this.context?.applySettings(settings);
@@ -152,6 +227,7 @@ export default class Three {
 			this.animationFrameId = null;
 		}
 
+		this.#discardRecording();
 		this.#unsubscribeResize?.();
 		this.#unsubscribeResize = null;
 		this.scene?.dispose();
@@ -187,13 +263,17 @@ export default class Three {
 	}
 
 	#createSnapshotFileName(): string {
+		return this.#createCaptureFileName("png");
+	}
+
+	#createCaptureFileName(extension: "mp4" | "png"): string {
 		const sceneName = this.scene?.activeAsset?.name ?? "scene";
 		const slug = sceneName
 			.toLowerCase()
 			.replace(/[^a-z0-9]+/g, "-")
 			.replace(/^-+|-+$/g, "");
 		const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
-		return `${slug || "scene"}-${timestamp}.png`;
+		return `${slug || "scene"}-${timestamp}.${extension}`;
 	}
 
 	#canvasToPngBlob(canvas: HTMLCanvasElement): Promise<Blob> {
@@ -222,6 +302,42 @@ export default class Three {
 		link.click();
 		link.remove();
 		window.setTimeout(() => URL.revokeObjectURL(url), 0);
+	}
+
+	#getSupportedRecordingMimeType(): string | null {
+		const supportedMimeTypes = [
+			"video/mp4;codecs=avc1.42E01E",
+			"video/mp4;codecs=h264",
+			"video/mp4",
+		];
+
+		return (
+			supportedMimeTypes.find((mimeType) =>
+				MediaRecorder.isTypeSupported(mimeType),
+			) ?? null
+		);
+	}
+
+	#discardRecording(): void {
+		const mediaRecorder = this.#mediaRecorder;
+		if (mediaRecorder && mediaRecorder.state !== "inactive") {
+			mediaRecorder.stream.getTracks().forEach((track) => {
+				track.stop();
+			});
+		}
+		this.#clearRecordingState();
+	}
+
+	#clearRecordingState(): void {
+		this.#recordingStream?.getTracks().forEach((track) => {
+			track.stop();
+		});
+		this.#mediaRecorder = null;
+		this.#recordingChunks = [];
+		this.#recordingFileName = "";
+		this.#recordingMimeType = "";
+		this.#recordingStream = null;
+		this.isRecording = false;
 	}
 
 	#emitStatsChange(): void {
