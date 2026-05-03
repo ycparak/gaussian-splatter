@@ -250,7 +250,7 @@ function RecordingCounter({ secondsRemaining }: { secondsRemaining: number }) {
             initial={{ y: "12px", filter: "blur(2px)", opacity: 0 }}
             animate={{ y: "0", filter: "blur(0px)", opacity: 1 }}
             exit={{ y: "-12px", filter: "blur(2px)", opacity: 0 }}
-            transition={{ type: "spring", bounce: 0.35 }}
+            transition={{ type: "spring", bounce: 0.28 }}
           >
             {number}
           </motion.div>
