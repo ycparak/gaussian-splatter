@@ -2,6 +2,7 @@
 
 import { Slider } from "@base-ui/react/slider";
 import { animate, motion, useMotionValue, useTransform } from "motion/react";
+import type { CSSProperties } from "react";
 import { useEffect, useRef, useState } from "react";
 
 import { cn } from "@/src/lib/utils";
@@ -26,19 +27,40 @@ const overflowTransition = {
 
 type DragRegion = "left" | "middle" | "right";
 
-export default function InputSlider() {
+interface RangeSliderProps {
+  label?: string;
+  value?: number;
+  min?: number;
+  max?: number;
+  step?: number;
+  digits?: number;
+  onValueChange?: (value: number) => void;
+  className?: string;
+  style?: CSSProperties;
+}
+
+export default function RangeSlider({
+  label = "Label",
+  value = DEFAULT_VALUE,
+  min = SLIDER_MIN,
+  max = SLIDER_MAX,
+  step = 0.1,
+  digits = 1,
+  onValueChange,
+  className,
+  style,
+}: RangeSliderProps) {
   const controlRef = useRef<HTMLDivElement | null>(null);
   const dragBoundsRef = useRef<{ left: number; right: number } | null>(null);
-  const [value, setValue] = useState(DEFAULT_VALUE);
   const [isHovered, setIsHovered] = useState(false);
   const [isActive, setIsActive] = useState(false);
   const [region, setRegion] = useState<DragRegion>("middle");
 
-  const animatedValue = useMotionValue(DEFAULT_VALUE);
+  const animatedValue = useMotionValue(value);
   const overflow = useMotionValue(0);
   const isEngaged = isHovered || isActive;
 
-  const shellWidth = useTransform(() => `${SLIDER_WIDTH + overflow.get()}px`);
+  const shellWidth = useTransform(() => `calc(100% + ${overflow.get()}px)`);
   const shellX = useTransform(() =>
     region === "left" ? `${-overflow.get()}px` : "0px",
   );
@@ -46,8 +68,7 @@ export default function InputSlider() {
   const fillWidth = useTransform(() => {
     const controlWidth =
       controlRef.current?.getBoundingClientRect().width ?? SLIDER_WIDTH;
-    const percent =
-      (animatedValue.get() - SLIDER_MIN) / (SLIDER_MAX - SLIDER_MIN);
+    const percent = (animatedValue.get() - min) / (max - min);
     const baseWidth = controlWidth * Math.max(0, Math.min(1, percent));
 
     return `${Math.max(0, baseWidth)}px`;
@@ -56,12 +77,15 @@ export default function InputSlider() {
   const thumbX = useTransform(() => {
     const controlWidth =
       controlRef.current?.getBoundingClientRect().width ?? SLIDER_WIDTH;
-    const percent =
-      (animatedValue.get() - SLIDER_MIN) / (SLIDER_MAX - SLIDER_MIN);
+    const percent = (animatedValue.get() - min) / (max - min);
     const baseX = controlWidth * Math.max(0, Math.min(1, percent));
 
     return `${clamp(baseX - THUMB_INSET, THUMB_INSET, controlWidth - THUMB_INSET)}px`;
   });
+
+  useEffect(() => {
+    void animate(animatedValue, value, valueTransition);
+  }, [animatedValue, value]);
 
   useEffect(() => {
     if (!isActive) return;
@@ -112,33 +136,32 @@ export default function InputSlider() {
     <motion.div
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
-      className="fixed z-9 h-9 touch-none select-none overflow-hidden bg-neutral-800/50 backdrop-blur-[20px]"
+      className={cn(
+        "relative h-9 w-full touch-none select-none overflow-hidden bg-neutral-800/50 backdrop-blur-[20px]",
+        className,
+      )}
       style={{
         width: shellWidth,
         x: shellX,
-        bottom: "20px",
-        left: "calc(50% - 149px)",
         borderRadius: "10px",
         backdropFilter: "blur(20px)",
         WebkitBackdropFilter: "blur(20px)",
         WebkitTapHighlightColor: "transparent",
+        ...style,
       }}
     >
       <Slider.Root
         tabIndex={-1}
         value={value}
-        min={SLIDER_MIN}
-        max={SLIDER_MAX}
-        step={0.1}
+        min={min}
+        max={max}
+        step={step}
         format={{
-          minimumFractionDigits: 1,
-          maximumFractionDigits: 1,
+          minimumFractionDigits: digits,
+          maximumFractionDigits: digits,
         }}
         onValueChange={(nextValue) => {
-          const roundedValue = Number(nextValue.toFixed(1));
-
-          setValue(roundedValue);
-          void animate(animatedValue, roundedValue, valueTransition);
+          onValueChange?.(roundToStep(nextValue, step, digits));
         }}
         className="relative h-full w-full"
       >
@@ -185,22 +208,31 @@ export default function InputSlider() {
 
         <Slider.Label
           className={cn(
-            "pointer-events-none absolute top-1/2 left-4 z-20 -translate-y-1/2 text-xs leading-3 transition-colors",
-            isEngaged ? "text-neutral-300" : "text-neutral-300",
+            "pointer-events-none absolute top-1/2 left-4 z-20 -translate-y-1/2 text-xs leading-3 font-semibold transition-colors",
+            isEngaged ? "text-neutral-200" : "text-neutral-400",
           )}
         >
-          Label
+          {label}
         </Slider.Label>
 
-        <Slider.Value
+        <span
           className={cn(
-            "pointer-events-none absolute top-1/2 right-4 z-20 -translate-y-1/2 text-xs leading-3 tabular-nums transition-colors",
+            "pointer-events-none absolute top-1/2 right-4 z-20 -translate-y-1/2 text-xs leading-3 font-semibold tabular-nums transition-colors",
             isEngaged ? "text-white" : "text-neutral-300",
           )}
-        />
+        >
+          {Number(value).toFixed(digits)}
+        </span>
       </Slider.Root>
     </motion.div>
   );
+}
+
+function roundToStep(value: number, step: number, digits: number) {
+  const multiplier = 1 / step;
+  const roundedValue = Math.round(value * multiplier) / multiplier;
+
+  return Number(roundedValue.toFixed(digits));
 }
 
 function decay(value: number, max: number) {
