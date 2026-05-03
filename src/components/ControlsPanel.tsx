@@ -3,7 +3,7 @@
 import { NavigationMenu } from "@base-ui/react/navigation-menu";
 import { ChevronDown } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
-import type { Dispatch, ReactNode, SetStateAction } from "react";
+import type { Dispatch, KeyboardEvent, ReactNode, SetStateAction } from "react";
 import { useRef, useState } from "react";
 
 import type { SceneSettings } from "@/shared/types";
@@ -106,7 +106,8 @@ export default function ControlsPanel({
 	onSettingsChange,
 }: ControlsPanelProps) {
 	const anchorRef = useRef<HTMLElement | null>(null);
-	const [activeTab, setActiveTab] = useState<TabId>("particles");
+	const rootRef = useRef<HTMLElement | null>(null);
+	const [activeTab, setActiveTab] = useState<TabId | null>("particles");
 	const activeTabConfig =
 		tabs.find((tab) => tab.id === activeTab) ?? fallbackTab;
 
@@ -146,9 +147,55 @@ export default function ControlsPanel({
 		});
 	}
 
+	function focusActionPanelTab(tabId: string) {
+		document
+			.querySelector<HTMLElement>(`[data-action-panel-tab="${tabId}"]`)
+			?.focus();
+	}
+
+	function handleTriggerKeyDown(
+		event: KeyboardEvent<HTMLButtonElement>,
+		index: number,
+	) {
+		if (event.key !== "Tab") return;
+
+		event.preventDefault();
+
+		const triggerElements = Array.from(
+			rootRef.current?.querySelectorAll<HTMLElement>(
+				"[data-controls-trigger]",
+			) ?? [],
+		);
+
+		if (event.shiftKey) {
+			if (index > 0) {
+				triggerElements[index - 1]?.focus();
+				return;
+			}
+
+			focusActionPanelTab("reload");
+			return;
+		}
+
+		if (index < triggerElements.length - 1) {
+			triggerElements[index + 1]?.focus();
+			return;
+		}
+
+		focusActionPanelTab("record");
+	}
+
 	return (
 		<NavigationMenu.Root<TabId>
 			ref={anchorRef}
+			onBlur={(event) => {
+				if (
+					!event.relatedTarget ||
+					!event.currentTarget.contains(event.relatedTarget)
+				) {
+					setActiveTab(null);
+				}
+			}}
 			aria-label="Scene controls"
 			value={activeTab}
 			onValueChange={(value) => {
@@ -162,7 +209,10 @@ export default function ControlsPanel({
 				WebkitTapHighlightColor: "transparent",
 			}}
 		>
-			<div className="pointer-events-none flex min-w-0 flex-1 items-center">
+			<div
+				ref={rootRef}
+				className="pointer-events-none flex min-w-0 flex-1 items-center"
+			>
 				<AnimatePresence initial={false} mode="popLayout">
 					<motion.span
 						key={activeTabConfig.label}
@@ -195,7 +245,7 @@ export default function ControlsPanel({
 			</div>
 
 			<NavigationMenu.List className="ml-auto flex shrink-0 items-center gap-1">
-				{tabs.map((tab) => {
+				{tabs.map((tab, index) => {
 					const section = CONTROL_SECTIONS.find(
 						(controlSection) => controlSection.id === tab.id,
 					);
@@ -206,10 +256,15 @@ export default function ControlsPanel({
 						<NavigationMenu.Item key={tab.id} value={tab.id}>
 							<NavigationMenu.Trigger
 								aria-label={tab.label}
+								tabIndex={0}
 								render={
 									<motion.button
 										type="button"
+										data-controls-trigger={tab.id}
 										whileTap={{ scale: 0.925 }}
+										onFocus={() => setActiveTab(tab.id)}
+										onMouseEnter={() => setActiveTab(tab.id)}
+										onKeyDown={(event) => handleTriggerKeyDown(event, index)}
 										style={{
 											borderRadius: "7px",
 											WebkitTapHighlightColor: "transparent",
@@ -237,6 +292,7 @@ export default function ControlsPanel({
 									<Button
 										className="w-full"
 										icon={<RandomIcon className="size-4" />}
+										tabIndex={-1}
 										onClick={() => randomizeSection(section)}
 									>
 										Randomise
@@ -244,6 +300,7 @@ export default function ControlsPanel({
 									<Button
 										className="w-full"
 										icon={<ResetIcon className="size-4" />}
+										tabIndex={-1}
 										onClick={() => resetSection(section.id)}
 									>
 										Reset
@@ -328,6 +385,7 @@ function ControlRenderer({
 			<Toggle
 				label={control.label}
 				checked={Boolean(currentValue)}
+				tabIndex={-1}
 				onCheckedChange={(value) =>
 					onChange(control.group, control.settingKey as never, value as never)
 				}
@@ -383,6 +441,7 @@ function ColorControl({
 			<input
 				type="color"
 				value={value}
+				tabIndex={-1}
 				className="absolute inset-0 size-full cursor-pointer opacity-0"
 				onChange={(event) => onChange(event.target.value)}
 			/>
@@ -415,6 +474,7 @@ function SelectControl({
 			</span>
 			<select
 				value={value}
+				tabIndex={-1}
 				className="absolute inset-0 size-full cursor-pointer opacity-0"
 				onChange={(event) => onChange(event.target.value)}
 			>
