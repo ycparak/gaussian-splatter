@@ -5,6 +5,7 @@ import { ChevronDown } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import type { Dispatch, KeyboardEvent, ReactNode, SetStateAction } from "react";
 import { useRef, useState } from "react";
+import { flushSync } from "react-dom";
 
 import type { SceneSettings } from "@/shared/types";
 import {
@@ -78,10 +79,14 @@ const tabs: Tab[] = [
 		icon: <RendererIcon className="size-4" />,
 	},
 ];
-const fallbackTab: Tab = {
-	id: "particles",
-	label: "Particles",
+const fallbackTab = {
+	id: "controls",
+	label: "Controls",
 	icon: null,
+} satisfies {
+	id: string;
+	label: string;
+	icon: ReactNode;
 };
 
 const islandTransition = {
@@ -106,8 +111,8 @@ export default function ControlsPanel({
 	onSettingsChange,
 }: ControlsPanelProps) {
 	const anchorRef = useRef<HTMLElement | null>(null);
-	const rootRef = useRef<HTMLElement | null>(null);
-	const [activeTab, setActiveTab] = useState<TabId | null>("particles");
+	const rootRef = useRef<HTMLDivElement | null>(null);
+	const [activeTab, setActiveTab] = useState<TabId | null>(null);
 	const activeTabConfig =
 		tabs.find((tab) => tab.id === activeTab) ?? fallbackTab;
 
@@ -147,60 +152,90 @@ export default function ControlsPanel({
 		});
 	}
 
-	function focusActionPanelTab(tabId: string) {
-		document
-			.querySelector<HTMLElement>(`[data-action-panel-tab="${tabId}"]`)
-			?.focus();
+	function isFocusWithinControlsMenu(
+		currentTarget: EventTarget | null,
+		target: EventTarget | null,
+	) {
+		if (!(currentTarget instanceof HTMLElement)) {
+			return false;
+		}
+
+		if (!(target instanceof HTMLElement)) {
+			return false;
+		}
+
+		return Boolean(
+			currentTarget.contains(target) ||
+				target.closest("[data-controls-panel-content]"),
+		);
 	}
 
-	function handleTriggerKeyDown(
-		event: KeyboardEvent<HTMLButtonElement>,
-		index: number,
-	) {
-		if (event.key !== "Tab") return;
+	function handleMenuKeyDownCapture(event: KeyboardEvent<HTMLElement>) {
+		if (event.key !== "Tab") {
+			return;
+		}
 
-		event.preventDefault();
+		const target = event.target;
+		if (!(target instanceof HTMLElement)) {
+			return;
+		}
+
+		const currentItem = target.closest(
+			'[data-controls-trigger], [tabindex="0"]',
+		) as HTMLElement | null;
+		if (!currentItem) {
+			return;
+		}
 
 		const triggerElements = Array.from(
-			rootRef.current?.querySelectorAll<HTMLElement>(
+			anchorRef.current?.querySelectorAll<HTMLElement>(
 				"[data-controls-trigger]",
 			) ?? [],
 		);
+		const contentElements = Array.from(
+			document.querySelectorAll<HTMLElement>(
+				'[data-controls-panel-content] [tabindex="0"]',
+			),
+		);
+		const focusableElements = [...triggerElements, ...contentElements].filter(
+			(element, index, elements) => elements.indexOf(element) === index,
+		);
 
-		if (event.shiftKey) {
-			if (index > 0) {
-				triggerElements[index - 1]?.focus();
-				return;
-			}
-
-			focusActionPanelTab("reload");
+		if (focusableElements.length === 0) {
 			return;
 		}
 
-		if (index < triggerElements.length - 1) {
-			triggerElements[index + 1]?.focus();
+		const currentIndex = focusableElements.findIndex(
+			(element) => element === currentItem || element.contains(currentItem),
+		);
+		if (currentIndex === -1) {
 			return;
 		}
 
-		focusActionPanelTab("record");
+		event.preventDefault();
+		event.stopPropagation();
+
+		const direction = event.shiftKey ? -1 : 1;
+		const nextIndex =
+			(currentIndex + direction + focusableElements.length) %
+			focusableElements.length;
+		focusableElements[nextIndex]?.focus();
 	}
 
 	return (
 		<NavigationMenu.Root<TabId>
 			ref={anchorRef}
+			onKeyDownCapture={handleMenuKeyDownCapture}
 			onBlur={(event) => {
 				if (
-					!event.relatedTarget ||
-					!event.currentTarget.contains(event.relatedTarget)
+					!isFocusWithinControlsMenu(event.currentTarget, event.relatedTarget)
 				) {
 					setActiveTab(null);
 				}
 			}}
 			aria-label="Scene controls"
 			value={activeTab}
-			onValueChange={(value) => {
-				if (value) setActiveTab(value);
-			}}
+			onValueChange={(value) => setActiveTab(value)}
 			delay={0}
 			closeDelay={0}
 			className="fixed bottom-5 left-5 z-9 flex h-9 w-82 items-center overflow-hidden border border-white/10 bg-neutral-900/65 px-0.5 backdrop-blur-[20px]"
@@ -245,7 +280,7 @@ export default function ControlsPanel({
 			</div>
 
 			<NavigationMenu.List className="ml-auto flex shrink-0 items-center gap-1">
-				{tabs.map((tab, index) => {
+				{tabs.map((tab) => {
 					const section = CONTROL_SECTIONS.find(
 						(controlSection) => controlSection.id === tab.id,
 					);
@@ -262,9 +297,8 @@ export default function ControlsPanel({
 										type="button"
 										data-controls-trigger={tab.id}
 										whileTap={{ scale: 0.925 }}
-										onFocus={() => setActiveTab(tab.id)}
-										onMouseEnter={() => setActiveTab(tab.id)}
-										onKeyDown={(event) => handleTriggerKeyDown(event, index)}
+										onFocus={() => flushSync(() => setActiveTab(tab.id))}
+										onMouseEnter={() => flushSync(() => setActiveTab(tab.id))}
 										style={{
 											borderRadius: "7px",
 											WebkitTapHighlightColor: "transparent",
@@ -287,12 +321,15 @@ export default function ControlsPanel({
 								<span className="relative z-10">{tab.icon}</span>
 							</NavigationMenu.Trigger>
 
-							<NavigationMenu.Content className="flex w-82 flex-col gap-1 transition-[opacity,transform] duration-250 ease-out data-[activation-direction=left]:data-[starting-style]:-translate-x-6 data-[activation-direction=left]:data-[ending-style]:translate-x-6 data-[activation-direction=right]:data-[starting-style]:translate-x-6 data-[activation-direction=right]:data-[ending-style]:-translate-x-6 data-[ending-style]:opacity-0 data-[starting-style]:opacity-0">
+							<NavigationMenu.Content
+								data-controls-panel-content
+								className="flex w-82 flex-col gap-1 transition-[opacity,transform] duration-250 ease-out data-[activation-direction=left]:data-[starting-style]:-translate-x-6 data-[activation-direction=left]:data-[ending-style]:translate-x-6 data-[activation-direction=right]:data-[starting-style]:translate-x-6 data-[activation-direction=right]:data-[ending-style]:-translate-x-6 data-[ending-style]:opacity-0 data-[starting-style]:opacity-0"
+							>
 								<div className="grid grid-cols-2 gap-1">
 									<Button
 										className="w-full"
 										icon={<RandomIcon className="size-4" />}
-										tabIndex={-1}
+										tabIndex={0}
 										onClick={() => randomizeSection(section)}
 									>
 										Randomise
@@ -300,7 +337,7 @@ export default function ControlsPanel({
 									<Button
 										className="w-full"
 										icon={<ResetIcon className="size-4" />}
-										tabIndex={-1}
+										tabIndex={0}
 										onClick={() => resetSection(section.id)}
 									>
 										Reset
@@ -373,6 +410,7 @@ function ControlRenderer({
 				max={control.max}
 				step={control.step}
 				digits={control.digits}
+				tabIndex={0}
 				onValueChange={(value) =>
 					onChange(control.group, control.settingKey as never, value as never)
 				}
@@ -385,7 +423,7 @@ function ControlRenderer({
 			<Toggle
 				label={control.label}
 				checked={Boolean(currentValue)}
-				tabIndex={-1}
+				tabIndex={0}
 				onCheckedChange={(value) =>
 					onChange(control.group, control.settingKey as never, value as never)
 				}
@@ -398,6 +436,7 @@ function ControlRenderer({
 			<ColorControl
 				label={control.label}
 				value={String(currentValue)}
+				tabIndex={0}
 				onChange={(value) =>
 					onChange(control.group, control.settingKey as never, value as never)
 				}
@@ -410,6 +449,7 @@ function ControlRenderer({
 			label={control.label}
 			value={String(currentValue)}
 			options={control.options}
+			tabIndex={0}
 			onChange={(value) =>
 				onChange(control.group, control.settingKey as never, value as never)
 			}
@@ -420,10 +460,12 @@ function ControlRenderer({
 function ColorControl({
 	label,
 	value,
+	tabIndex,
 	onChange,
 }: {
 	label: string;
 	value: string;
+	tabIndex?: number;
 	onChange: (value: string) => void;
 }) {
 	return (
@@ -441,7 +483,7 @@ function ColorControl({
 			<input
 				type="color"
 				value={value}
-				tabIndex={-1}
+				tabIndex={tabIndex}
 				className="absolute inset-0 size-full cursor-pointer opacity-0"
 				onChange={(event) => onChange(event.target.value)}
 			/>
@@ -453,11 +495,13 @@ function SelectControl({
 	label,
 	value,
 	options,
+	tabIndex,
 	onChange,
 }: {
 	label: string;
 	value: string;
 	options: Array<{ label: string; value: string }>;
+	tabIndex?: number;
 	onChange: (value: string) => void;
 }) {
 	const selectedLabel =
@@ -474,7 +518,7 @@ function SelectControl({
 			</span>
 			<select
 				value={value}
-				tabIndex={-1}
+				tabIndex={tabIndex}
 				className="absolute inset-0 size-full cursor-pointer opacity-0"
 				onChange={(event) => onChange(event.target.value)}
 			>
