@@ -1,7 +1,14 @@
+export { BloomIcon } from "./bloom";
+export { CameraIcon } from "./camera";
+export { ColorIcon } from "./color";
 export { DownloadIcon } from "./download";
 export type { IconProps } from "./icon-base";
 export { IconBase } from "./icon-base";
+export { LightingIcon } from "./lighting";
+export { ParticlesIcon } from "./particles";
 export { PauseIcon } from "./pause";
 export { PlayIcon } from "./play";
 export { RecordIcon } from "./record";
 export { ReloadIcon } from "./reload";
+export { RendererIcon } from "./renderer";
+export { SceneIcon } from "./scene";
