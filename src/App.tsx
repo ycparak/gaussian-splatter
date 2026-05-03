@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { SceneLoadCallbacks } from "@/shared/types";
 import ActionPanel from "@/src/components/ActionPanel";
 import ControlsPanel from "@/src/components/ControlsPanel";
+import InputSlider from "@/src/components/InputSlider";
 import { DEFAULT_SCENE_SETTINGS } from "@/src/config/sceneControls";
 import Three from "@/src/core/Three";
 import { defaultScene } from "@/src/scenes/availableScenes";
@@ -186,6 +187,8 @@ export default function App() {
 			/>
 
 			<ControlsPanel />
+
+			<InputSlider />
 
 			<div
 				id="loader"
