@@ -3,7 +3,7 @@
 import { NavigationMenu } from "@base-ui/react/navigation-menu";
 import { ChevronDown } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
-import type { Dispatch, KeyboardEvent, ReactNode, SetStateAction } from "react";
+import type { Dispatch, ReactNode, SetStateAction } from "react";
 import { useRef, useState } from "react";
 import { flushSync } from "react-dom";
 
@@ -170,62 +170,9 @@ export default function ControlsPanel({
     );
   }
 
-  function handleMenuKeyDownCapture(event: KeyboardEvent<HTMLElement>) {
-    if (event.key !== "Tab") {
-      return;
-    }
-
-    const target = event.target;
-    if (!(target instanceof HTMLElement)) {
-      return;
-    }
-
-    const currentItem = target.closest(
-      '[data-controls-trigger], [tabindex="0"]',
-    ) as HTMLElement | null;
-    if (!currentItem) {
-      return;
-    }
-
-    const triggerElements = Array.from(
-      anchorRef.current?.querySelectorAll<HTMLElement>(
-        "[data-controls-trigger]",
-      ) ?? [],
-    );
-    const contentElements = Array.from(
-      document.querySelectorAll<HTMLElement>(
-        '[data-controls-panel-content] [tabindex="0"]',
-      ),
-    );
-    const focusableElements = [...triggerElements, ...contentElements].filter(
-      (element, index, elements) => elements.indexOf(element) === index,
-    );
-
-    if (focusableElements.length === 0) {
-      return;
-    }
-
-    const currentIndex = focusableElements.findIndex(
-      (element) => element === currentItem || element.contains(currentItem),
-    );
-    if (currentIndex === -1) {
-      return;
-    }
-
-    event.preventDefault();
-    event.stopPropagation();
-
-    const direction = event.shiftKey ? -1 : 1;
-    const nextIndex =
-      (currentIndex + direction + focusableElements.length) %
-      focusableElements.length;
-    focusableElements[nextIndex]?.focus();
-  }
-
   return (
     <NavigationMenu.Root<TabId>
       ref={anchorRef}
-      onKeyDownCapture={handleMenuKeyDownCapture}
       onBlur={(event) => {
         if (
           !isFocusWithinControlsMenu(event.currentTarget, event.relatedTarget)
@@ -410,7 +357,7 @@ function ControlRenderer({
         max={control.max}
         step={control.step}
         digits={control.digits}
-        tabIndex={0}
+        tabIndex={-1}
         onValueChange={(value) =>
           onChange(control.group, control.settingKey as never, value as never)
         }
@@ -423,7 +370,7 @@ function ControlRenderer({
       <Toggle
         label={control.label}
         checked={Boolean(currentValue)}
-        tabIndex={0}
+        tabIndex={-1}
         onCheckedChange={(value) =>
           onChange(control.group, control.settingKey as never, value as never)
         }
@@ -436,7 +383,7 @@ function ControlRenderer({
       <ColorControl
         label={control.label}
         value={String(currentValue)}
-        tabIndex={0}
+        tabIndex={-1}
         onChange={(value) =>
           onChange(control.group, control.settingKey as never, value as never)
         }
@@ -449,7 +396,7 @@ function ControlRenderer({
       label={control.label}
       value={String(currentValue)}
       options={control.options}
-      tabIndex={0}
+      tabIndex={-1}
       onChange={(value) =>
         onChange(control.group, control.settingKey as never, value as never)
       }
@@ -483,7 +430,7 @@ function ColorControl({
       <input
         type="color"
         value={value}
-        tabIndex={tabIndex}
+        tabIndex={-1}
         className="absolute inset-0 size-full cursor-pointer opacity-0"
         onChange={(event) => onChange(event.target.value)}
       />
@@ -518,7 +465,7 @@ function SelectControl({
       </span>
       <select
         value={value}
-        tabIndex={tabIndex}
+        tabIndex={-1}
         className="absolute inset-0 size-full cursor-pointer opacity-0"
         onChange={(event) => onChange(event.target.value)}
       >
