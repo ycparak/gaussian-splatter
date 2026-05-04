@@ -1,23 +1,22 @@
+import { AnimatePresence, motion } from "motion/react";
 import { useCallback, useEffect, useRef, useState } from "react";
-import {
-	applySceneLoadFailed,
-	applySceneLoadSucceeded,
-	applySceneSelectionRequested,
-	createInitialSceneSelectionState,
-} from "../shared/sceneSelection";
 import type {
 	SceneAsset,
 	SceneLoadCallbacks,
-	SceneStats,
-} from "../shared/types";
-import SceneControlsSidebar from "./components/SceneControlsSidebar";
-import SceneSidebar from "./components/SceneSidebar";
+	SceneSettings,
+} from "@/shared/types";
+import ActionPanel from "@/src/components/ActionPanel";
+import ControlsPanel from "@/src/components/ControlsPanel";
+import ImagePanel from "@/src/components/ImagePanel";
+import InfoPanel from "@/src/components/InfoPanel";
+import TopLeftActions from "@/src/components/TopLeftActions";
+import { isUploadUiEnabled } from "@/src/config/runtime";
 import {
 	cloneSceneSettings,
 	DEFAULT_SCENE_SETTINGS,
-} from "./config/sceneControls";
-import Three from "./core/Three";
-import { defaultScene } from "./scenes/availableScenes";
+} from "@/src/config/sceneControls";
+import Three from "@/src/core/Three";
+import { defaultScene } from "@/src/scenes/availableScenes";
 
 interface LoaderState {
 	visible: boolean;
@@ -40,32 +39,126 @@ const INITIAL_LOADER_STATE: LoaderState = defaultScene
 			message: null,
 		};
 
+const RECORDING_DURATION_SECONDS = 30;
+
+const interfaceTransition = {
+	duration: 0.7,
+	ease: [0.23, 1, 0.32, 1],
+} as const;
+
 export default function App() {
 	const containerRef = useRef<HTMLDivElement | null>(null);
 	const threeRef = useRef<Three | null>(null);
-	const initialSceneSettingsRef = useRef(cloneSceneSettings());
 	const hasCompletedInitialLoadRef = useRef(!defaultScene);
-	const [sceneSettings, setSceneSettings] = useState(
-		initialSceneSettingsRef.current,
-	);
-	const [sceneStats, setSceneStats] = useState<SceneStats>({
-		activeAssetId: defaultScene?.id ?? null,
-		particleCount: 0,
-	});
-	const [selectionState, setSelectionState] = useState(() =>
-		createInitialSceneSelectionState(defaultScene),
-	);
+	const recordingCountdownIntervalRef = useRef<number | null>(null);
+	const recordingStopTimeoutRef = useRef<number | null>(null);
 	const [loaderState, setLoaderState] =
 		useState<LoaderState>(INITIAL_LOADER_STATE);
+	const [isScenePaused, setIsScenePaused] = useState(false);
+	const [isInfoOpen, setIsInfoOpen] = useState(false);
+	const [activeSceneId, setActiveSceneId] = useState<string | null>(
+		defaultScene?.id ?? null,
+	);
+	const [sceneErrorMessage, setSceneErrorMessage] = useState<string | null>(
+		null,
+	);
+	const [isRecording, setIsRecording] = useState(false);
+	const [recordingSecondsRemaining, setRecordingSecondsRemaining] = useState(
+		RECORDING_DURATION_SECONDS,
+	);
+	const [sceneSettings, setSceneSettings] = useState<SceneSettings>(() =>
+		cloneSceneSettings(DEFAULT_SCENE_SETTINGS),
+	);
+
+	const clearRecordingTimers = useCallback(() => {
+		if (recordingCountdownIntervalRef.current !== null) {
+			window.clearInterval(recordingCountdownIntervalRef.current);
+			recordingCountdownIntervalRef.current = null;
+		}
+
+		if (recordingStopTimeoutRef.current !== null) {
+			window.clearTimeout(recordingStopTimeoutRef.current);
+			recordingStopTimeoutRef.current = null;
+		}
+	}, []);
+
+	const stopRecordingSession = useCallback(() => {
+		clearRecordingTimers();
+		threeRef.current?.stopRecording();
+		setIsRecording(false);
+		setRecordingSecondsRemaining(RECORDING_DURATION_SECONDS);
+	}, [clearRecordingTimers]);
+
+	const startRecordingSession = useCallback(() => {
+		if (!threeRef.current) return;
+
+		try {
+			threeRef.current.startRecording({
+				frameRate: 60,
+			});
+		} catch (error) {
+			console.error("Scene recording failed:", error);
+			return;
+		}
+
+		clearRecordingTimers();
+		setIsRecording(true);
+		setRecordingSecondsRemaining(RECORDING_DURATION_SECONDS);
+		recordingCountdownIntervalRef.current = window.setInterval(() => {
+			setRecordingSecondsRemaining((secondsRemaining) =>
+				Math.max(secondsRemaining - 1, 0),
+			);
+		}, 1000);
+		recordingStopTimeoutRef.current = window.setTimeout(() => {
+			stopRecordingSession();
+		}, RECORDING_DURATION_SECONDS * 1000);
+	}, [clearRecordingTimers, stopRecordingSession]);
+
+	const handleDownloadSnapshot = useCallback(() => {
+		void threeRef.current?.downloadSnapshot().catch((error: unknown) => {
+			console.error("Scene snapshot failed:", error);
+		});
+	}, []);
+
+	const handleReloadScene = useCallback(() => {
+		threeRef.current?.reloadScene();
+	}, []);
+
+	const handleToggleInfo = useCallback(() => {
+		setIsInfoOpen((currentIsInfoOpen) => {
+			const nextIsInfoOpen = !currentIsInfoOpen;
+			threeRef.current?.setInfoVisible(nextIsInfoOpen);
+			return nextIsInfoOpen;
+		});
+	}, []);
+
+	const handleSceneSelect = useCallback((scene: SceneAsset) => {
+		setSceneErrorMessage(null);
+		setActiveSceneId(scene.id);
+		threeRef.current?.loadScene(scene);
+	}, []);
+
+	const handleTogglePause = useCallback(() => {
+		const nextIsPaused = threeRef.current?.togglePaused() ?? false;
+		setIsScenePaused(nextIsPaused);
+	}, []);
+
+	const handleToggleRecording = useCallback(() => {
+		if (isRecording) {
+			stopRecordingSession();
+			return;
+		}
+
+		startRecordingSession();
+	}, [isRecording, startRecordingSession, stopRecordingSession]);
 
 	useEffect(() => {
 		if (!containerRef.current || threeRef.current) return;
 
 		const sceneLoadCallbacks: SceneLoadCallbacks = {
 			onLoadStart: (asset) => {
-				setSelectionState((currentState) =>
-					applySceneSelectionRequested(currentState, asset),
-				);
+				setSceneErrorMessage(null);
+				setActiveSceneId(asset.id);
 				if (!hasCompletedInitialLoadRef.current) {
 					setLoaderState({
 						visible: true,
@@ -85,12 +178,10 @@ export default function App() {
 					});
 				}
 			},
-			onLoadSuccess: (asset, stats) => {
+			onLoadSuccess: (_asset) => {
+				setSceneErrorMessage(null);
+				setActiveSceneId(_asset.id);
 				hasCompletedInitialLoadRef.current = true;
-				setSelectionState((currentState) =>
-					applySceneLoadSucceeded(currentState, asset),
-				);
-				setSceneStats(stats);
 				setLoaderState({
 					visible: false,
 					progress: 1,
@@ -98,10 +189,8 @@ export default function App() {
 					message: null,
 				});
 			},
-			onLoadError: (asset, error) => {
-				setSelectionState((currentState) =>
-					applySceneLoadFailed(currentState, asset, error),
-				);
+			onLoadError: (_asset, error) => {
+				setSceneErrorMessage(error.message);
 				if (!hasCompletedInitialLoadRef.current) {
 					setLoaderState({
 						visible: true,
@@ -114,45 +203,72 @@ export default function App() {
 		};
 
 		const three = new Three(containerRef.current, {
-			settings: initialSceneSettingsRef.current,
-			onStatsChange: setSceneStats,
+			settings: cloneSceneSettings(DEFAULT_SCENE_SETTINGS),
 			sceneLoadCallbacks,
 		});
 		threeRef.current = three;
 		three.run();
+		setIsScenePaused(three.isPaused);
 
 		return () => {
+			clearRecordingTimers();
 			three.dispose();
 			threeRef.current = null;
 		};
-	}, []);
+	}, [clearRecordingTimers]);
 
 	useEffect(() => {
-		threeRef.current?.applySettings(sceneSettings);
+		const three = threeRef.current;
+		if (!three) return;
+
+		three.applySettings(sceneSettings);
+		if (three.isPaused) {
+			three.renderStillFrame();
+		}
 	}, [sceneSettings]);
-
-	const handleSceneSelect = useCallback((scene: SceneAsset) => {
-		threeRef.current?.loadScene(scene);
-	}, []);
-
-	const resetSceneSettings = useCallback(() => {
-		setSceneSettings(cloneSceneSettings(DEFAULT_SCENE_SETTINGS));
-	}, []);
 
 	return (
 		<>
 			<div ref={containerRef} className="fixed inset-0 overflow-hidden" />
-			<SceneControlsSidebar
-				settings={sceneSettings}
-				stats={sceneStats}
-				onSettingsChange={setSceneSettings}
-				onResetAll={resetSceneSettings}
-			/>
-			<SceneSidebar
-				activeSceneId={selectionState.activeSceneId}
-				onSceneSelect={handleSceneSelect}
-				sceneErrorMessage={selectionState.errorMessage}
-			/>
+
+			<TopLeftActions isInfoOpen={isInfoOpen} onToggleInfo={handleToggleInfo} />
+
+			<motion.div
+				className="pointer-events-none fixed inset-0 z-9"
+				initial={false}
+				animate={{
+					opacity: isInfoOpen ? 0 : 1,
+				}}
+				transition={interfaceTransition}
+				aria-hidden={isInfoOpen}
+				inert={isInfoOpen ? true : undefined}
+			>
+				<ActionPanel
+					isPaused={isScenePaused}
+					isRecording={isRecording}
+					recordingSecondsRemaining={recordingSecondsRemaining}
+					onDownloadSnapshot={handleDownloadSnapshot}
+					onReload={handleReloadScene}
+					onToggleRecording={handleToggleRecording}
+					onTogglePause={handleTogglePause}
+				/>
+
+				<ControlsPanel
+					settings={sceneSettings}
+					onSettingsChange={setSceneSettings}
+				/>
+
+				{isUploadUiEnabled ? (
+					<ImagePanel
+						activeSceneId={activeSceneId}
+						sceneErrorMessage={sceneErrorMessage}
+						onSceneSelect={handleSceneSelect}
+					/>
+				) : null}
+			</motion.div>
+
+			<AnimatePresence>{isInfoOpen ? <InfoPanel /> : null}</AnimatePresence>
+
 			<div
 				id="loader"
 				className={`fixed inset-0 z-50 flex items-center justify-center bg-black transition-opacity duration-700 ${

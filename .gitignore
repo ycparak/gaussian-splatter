@@ -7,12 +7,16 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
+@ Agents
 .agents
+skills-lock.json
+
 .generated
 node_modules
 dist
 dist-ssr
 *.local
+public/*.pgs.gz
 
 # Editor directories and files
 .vscode/*
@@ -24,5 +28,3 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
-
-public/*.pgs.gz

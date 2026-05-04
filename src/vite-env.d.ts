@@ -1,7 +1,7 @@
 /// <reference types="vite/client" />
 
 declare module "virtual:bundled-scenes" {
-	import type { SceneAsset } from "../shared/types";
+	import type { SceneAsset } from "@/shared/types";
 
 	export const bundledScenes: SceneAsset[];
 }
@@ -19,4 +19,12 @@ declare module "*.frag" {
 declare module "*.vert" {
 	const shaderSource: string;
 	export default shaderSource;
+}
+
+interface ImportMetaEnv {
+	readonly VITE_ENABLE_UPLOADS?: string;
+}
+
+interface ImportMeta {
+	readonly env: ImportMetaEnv;
 }

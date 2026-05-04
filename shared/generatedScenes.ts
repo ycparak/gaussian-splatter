@@ -1,4 +1,4 @@
-import type { GeneratedScene } from "./types";
+import type { GeneratedScene } from "@/shared/types";
 
 export function mergeGeneratedScene(
 	scenes: GeneratedScene[],

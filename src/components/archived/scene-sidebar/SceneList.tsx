@@ -1,7 +1,7 @@
 import { ChevronDown, ImageIcon } from "lucide-react";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { cn } from "@/lib/utils";
-import type { SceneAsset } from "../../../shared/types";
+import type { SceneAsset } from "@/shared/types";
+import { ScrollArea } from "@/src/components/ui/scroll-area";
+import { cn } from "@/src/lib/utils";
 
 interface SceneListProps {
 	scenes: SceneAsset[];

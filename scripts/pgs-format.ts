@@ -9,8 +9,8 @@ import {
 	PGS_VERSION,
 	PLY_TYPE_SIZES,
 	SH_C0,
-} from "../shared/pgs";
-import type { Bounds3, PackPlyResult } from "../shared/types";
+} from "@/shared/pgs";
+import type { Bounds3, PackPlyResult } from "@/shared/types";
 
 interface PackedBufferResult {
 	buffer: Buffer;

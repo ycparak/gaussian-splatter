@@ -1,7 +1,7 @@
 import { Sparkles, Upload } from "lucide-react";
 import type { ChangeEventHandler, DragEventHandler, RefObject } from "react";
-import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import { Button } from "@/src/components/ui/button";
+import { cn } from "@/src/lib/utils";
 
 interface UploadPanelProps {
 	fileInputRef: RefObject<HTMLInputElement | null>;

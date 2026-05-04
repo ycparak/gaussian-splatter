@@ -1,5 +1,5 @@
 import { AlertCircle, CheckCircle2, LoaderCircle } from "lucide-react";
-import type { GenerationJobStatus } from "../../../shared/types";
+import type { GenerationJobStatus } from "@/shared/types";
 
 interface StatusLineProps {
 	status: GenerationJobStatus | "idle";

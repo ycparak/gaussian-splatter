@@ -1,8 +1,4 @@
-import type {
-	SceneSettings,
-	SceneStats,
-	ToneMappingMode,
-} from "../../../shared/types";
+import type { SceneSettings, ToneMappingMode } from "@/shared/types";
 
 export type SettingsGroup = keyof SceneSettings;
 
@@ -40,11 +36,6 @@ export type ControlDefinition =
 			group: SettingsGroup;
 			settingKey: string;
 			options: SelectOption<ToneMappingMode>[];
-	  }
-	| {
-			kind: "readonly";
-			label: string;
-			getValue: (settings: SceneSettings, stats: SceneStats) => string;
 	  };
 
 export interface ControlSectionDefinition {
@@ -75,12 +66,6 @@ export const CONTROL_SECTIONS: ControlSectionDefinition[] = [
 		id: "particles",
 		title: "Particles",
 		controls: [
-			{
-				kind: "readonly",
-				label: "Count",
-				getValue: (_settings, stats) =>
-					(stats.particleCount ?? 0).toLocaleString(),
-			},
 			{
 				kind: "slider",
 				label: "Size",
@@ -518,11 +503,6 @@ export const CONTROL_SECTIONS: ControlSectionDefinition[] = [
 				max: 3,
 				step: 0.05,
 				digits: 2,
-			},
-			{
-				kind: "readonly",
-				label: "Antialias",
-				getValue: (settings) => (settings.renderer.antialias ? "On" : "Off"),
 			},
 		],
 	},

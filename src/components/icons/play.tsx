@@ -1,0 +1,18 @@
+import { forwardRef } from "react";
+
+import { IconBase, type IconProps } from "./icon-base";
+
+export const PlayIcon = forwardRef<SVGSVGElement, IconProps>(
+	function PlayIcon(props, ref) {
+		return (
+			<IconBase ref={ref} {...props}>
+				<path
+					d="M10.7998 2.6507C8.30554 1.02248 5 2.81218 5 5.79087V18.209C5 21.1877 8.30553 22.9774 10.7998 21.3492L20.3116 15.1401C22.5785 13.6603 22.5785 10.3395 20.3116 8.85977L10.7998 2.6507Z"
+					fill="currentColor"
+				/>
+			</IconBase>
+		);
+	},
+);
+
+PlayIcon.displayName = "PlayIcon";

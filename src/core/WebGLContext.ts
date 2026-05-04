@@ -1,6 +1,6 @@
 import * as THREE from "three";
-import type { SceneSettings } from "../../shared/types";
-import { DEFAULT_SCENE_SETTINGS } from "../config/sceneControls";
+import type { SceneSettings } from "@/shared/types";
+import { DEFAULT_SCENE_SETTINGS } from "@/src/config/sceneControls";
 
 const TONE_MAPPING: Record<string, THREE.ToneMapping> = {
 	none: THREE.NoToneMapping,
@@ -148,6 +148,7 @@ export default class WebGLContext {
 		this.renderer = new THREE.WebGLRenderer({
 			canvas: this.canvas,
 			antialias: DEFAULT_SCENE_SETTINGS.renderer.antialias,
+			preserveDrawingBuffer: true,
 		});
 		this.renderer.shadowMap.enabled = false;
 		this.renderer.toneMapping = THREE.ACESFilmicToneMapping;

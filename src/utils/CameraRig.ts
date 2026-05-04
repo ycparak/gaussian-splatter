@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import type { CameraSettings } from "../../shared/types";
+import type { CameraSettings } from "@/shared/types";
 
 interface CameraRigOptions {
 	target?: THREE.Vector3;
