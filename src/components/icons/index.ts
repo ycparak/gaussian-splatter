@@ -1,5 +1,6 @@
 export { BloomIcon } from "./bloom";
 export { CameraIcon } from "./camera";
+export { ChevronRightIcon } from "./chevron-right";
 export { ColorIcon } from "./color";
 export { DownloadIcon } from "./download";
 export { GithubIcon } from "./github";

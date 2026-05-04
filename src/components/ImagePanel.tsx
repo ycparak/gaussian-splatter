@@ -1,6 +1,6 @@
 "use client";
 
-import { ImageIcon, LoaderCircle, Sparkles, Upload } from "lucide-react";
+import { LoaderCircle, Sparkles } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import {
 	type ChangeEvent,
@@ -21,6 +21,7 @@ import type {
 	GenerationJobStatus,
 	SceneAsset,
 } from "@/shared/types";
+import { ChevronRightIcon } from "@/src/components/icons";
 import Button from "@/src/components/ui/button";
 import ScrollArea from "@/src/components/ui/scroll-area";
 import { cn } from "@/src/lib/utils";
@@ -246,12 +247,12 @@ export default function ImagePanel({
 					<motion.aside
 						ref={panelRef}
 						key="images-panel"
-						initial={{ opacity: 0, y: 8, scale: 0.98, filter: "blur(4px)" }}
-						animate={{ opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }}
-						exit={{ opacity: 0, y: 6, scale: 0.98, filter: "blur(4px)" }}
+						initial={{ opacity: 0, y: 8, scale: 0.98 }}
+						animate={{ opacity: 1, y: 0, scale: 1 }}
+						exit={{ opacity: 0, y: 6, scale: 0.98 }}
 						transition={{ duration: 0.18, ease: [0.23, 1, 0.32, 1] }}
 						style={{ borderRadius: "10px", transformOrigin: "right bottom" }}
-						className="pointer-events-auto fixed right-5 bottom-[68px] flex max-h-[calc(100dvh-88px)] w-[min(320px,calc(100vw-40px))] flex-col gap-1 overflow-hidden border border-white/5 bg-neutral-900/70 p-1 backdrop-blur-[20px]"
+						className="pointer-events-auto fixed right-5 bottom-[68px] flex max-h-[calc(100dvh-88px)] w-[min(320px,calc(100vw-40px))] flex-col gap-1"
 					>
 						{enableUploads ? (
 							<UploadDropzone
@@ -301,11 +302,18 @@ export default function ImagePanel({
 					type="button"
 					aria-label={isOpen ? "Hide images panel" : "Show images panel"}
 					aria-expanded={isOpen}
-					icon={<ImageIcon />}
+					icon={
+						<ChevronRightIcon
+							className={cn(
+								"size-4 transition-transform duration-150",
+								isOpen && "-rotate-90",
+							)}
+						/>
+					}
 					onClick={() => setIsOpen((value) => !value)}
 					className={cn(
-						"h-9 px-3 text-neutral-300 shadow-xl shadow-black/25",
-						isOpen && "bg-neutral-800/65",
+						"h-9 gap-1.5 pr-4 pl-2 text-neutral-400 shadow-xl shadow-black/25 hover:text-neutral-300",
+						isOpen && "bg-neutral-800/65 text-neutral-300",
 					)}
 				>
 					Images
@@ -355,7 +363,7 @@ function UploadDropzone({
 			<button
 				type="button"
 				className={cn(
-					"relative flex h-32 shrink-0 flex-col items-center justify-center gap-2 overflow-hidden rounded-[8px] bg-neutral-800/50 text-neutral-400 transition-colors hover:bg-neutral-800/60 hover:text-neutral-300",
+					"relative flex h-32 shrink-0 flex-col items-center justify-center gap-2 overflow-hidden rounded-[8px] bg-neutral-800/50 text-neutral-400 backdrop-blur-[20px] transition-colors hover:bg-neutral-800/60 hover:text-neutral-300",
 					isDragging &&
 						"bg-cyan-400/10 text-neutral-200 ring-1 ring-cyan-300/70",
 				)}
@@ -373,9 +381,6 @@ function UploadDropzone({
 						className="absolute inset-0 size-full object-cover opacity-45"
 					/>
 				) : null}
-				<span className="relative flex size-7 items-center justify-center rounded-full bg-black/25">
-					<Upload className="size-4" aria-hidden="true" />
-				</span>
 				<span className="relative max-w-56 truncate text-xs leading-3 font-semibold">
 					{selectedFile ? selectedFile.name : "Drop image or click to browse"}
 				</span>
@@ -472,7 +477,7 @@ function SceneListItem({
 			type="button"
 			aria-current={isActive ? "true" : undefined}
 			className={cn(
-				"flex h-9 items-center gap-2 rounded-[8px] bg-neutral-800/50 px-3 text-left text-xs leading-3 font-semibold text-neutral-400 transition-colors hover:bg-neutral-800/65 hover:text-neutral-300",
+				"flex h-9 items-center gap-2 rounded-[8px] bg-neutral-800/50 px-3 text-left text-xs leading-3 font-semibold text-neutral-400 backdrop-blur-[20px] transition-colors hover:bg-neutral-800/65 hover:text-neutral-300",
 				isActive && "text-neutral-300",
 			)}
 			onClick={() => onSceneSelect(scene)}
