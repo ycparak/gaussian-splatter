@@ -266,7 +266,7 @@ export default function ControlsPanel({
           y: event.clientY,
         };
       }}
-      className="fixed bottom-5 left-5 z-9 flex h-9 w-82 items-center overflow-hidden border border-white/10 bg-neutral-900/65 px-0.5 backdrop-blur-[20px]"
+      className="fixed bottom-5 left-5 z-9 flex h-9 w-82 items-center overflow-visible border border-white/10 bg-neutral-900/65 px-0.5 backdrop-blur-[20px]"
       style={{
         borderRadius: "10px",
         WebkitTapHighlightColor: "transparent",
@@ -372,7 +372,7 @@ export default function ControlsPanel({
                   </Button>
                 </div>
 
-                <div className="flex max-h-[calc(100dvh-128px)] flex-col gap-1 overflow-y-auto">
+                <div className="-mx-5 flex max-h-[calc(100dvh-128px)] flex-col gap-1 overflow-x-hidden overflow-y-auto px-5">
                   {section.controls.map((control) => (
                     <ControlRenderer
                       key={`${section.id}-${control.label}`}
@@ -401,7 +401,7 @@ export default function ControlsPanel({
         >
           <NavigationMenu.Popup
             ref={panelRef}
-            className="w-82 overflow-hidden rounded-[10px] transition-[opacity,transform,width,height] duration-[250ms] ease-out data-[ending-style]:translate-y-2 data-[ending-style]:opacity-0 data-[starting-style]:translate-y-2 data-[starting-style]:opacity-0"
+            className="w-82 overflow-visible rounded-[10px] transition-[opacity,transform,width,height] duration-[250ms] ease-out data-[ending-style]:translate-y-2 data-[ending-style]:opacity-0 data-[starting-style]:translate-y-2 data-[starting-style]:opacity-0"
           >
             <NavigationMenu.Viewport className="relative w-82 overflow-visible" />
           </NavigationMenu.Popup>
