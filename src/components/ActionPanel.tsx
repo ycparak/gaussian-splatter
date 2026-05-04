@@ -121,7 +121,7 @@ export default function ActionPanel({
 					setActiveTab(null);
 				}
 			}}
-			className="fixed top-5 right-5 z-9 flex h-9 items-center overflow-hidden border border-white/5 bg-neutral-800/50 px-0.5 backdrop-blur-[20px]"
+			className="pointer-events-auto fixed top-5 right-5 z-9 flex h-9 items-center overflow-hidden border border-white/5 bg-neutral-800/50 px-0.5 backdrop-blur-[20px]"
 		>
 			<div className="pointer-events-none flex min-w-0 flex-1 items-center">
 				<AnimatePresence initial={false} mode="popLayout">

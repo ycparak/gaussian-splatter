@@ -36,6 +36,7 @@ export default class Scene {
 	onStatsChange: ((stats: SceneStats) => void) | null;
 	sceneLoadCallbacks: SceneLoadCallbacks;
 	plyLoader: PlyLoader | null = null;
+	isInfoVisible = false;
 
 	constructor(options: SceneOptions = {}) {
 		this.settings = options.settings ?? DEFAULT_SCENE_SETTINGS;
@@ -95,10 +96,16 @@ export default class Scene {
 			onLoad: (points) => this.#showLoadedPoints(points, asset),
 			onError,
 		});
+		this.plyLoader.setInfoVisible(this.isInfoVisible);
 	}
 
 	reloadAsset(): void {
 		this.loadAsset(this.activeAsset ?? defaultScene, { force: true });
+	}
+
+	setInfoVisible(isVisible: boolean): void {
+		this.isInfoVisible = isVisible;
+		this.plyLoader?.setInfoVisible(isVisible);
 	}
 
 	animate(delta: number, elapsed: number): void {

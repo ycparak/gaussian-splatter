@@ -6,6 +6,7 @@ uniform float uAmbientLight;
 uniform float uDiffuseLight;
 uniform float uSpecularLight;
 uniform float uShininess;
+uniform float uInfoProgress;
 
 varying vec3 vColor;
 varying float vFogDepth;
@@ -38,5 +39,7 @@ void main() {
   float fogFactor = smoothstep(fogNear, fogFar, vFogDepth);
   color = mix(color, fogColor, fogFactor);
 
-  gl_FragColor = vec4(color, 1.0);
+  float opacity = 1.0 - smoothstep(0.1, 1.0, uInfoProgress);
+
+  gl_FragColor = vec4(color, opacity);
 }

@@ -1,3 +1,4 @@
+import { AnimatePresence, motion } from "motion/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type {
 	SceneAsset,
@@ -7,6 +8,8 @@ import type {
 import ActionPanel from "@/src/components/ActionPanel";
 import ControlsPanel from "@/src/components/ControlsPanel";
 import ImagePanel from "@/src/components/ImagePanel";
+import InfoPanel from "@/src/components/InfoPanel";
+import TopLeftActions from "@/src/components/TopLeftActions";
 import {
 	cloneSceneSettings,
 	DEFAULT_SCENE_SETTINGS,
@@ -37,6 +40,11 @@ const INITIAL_LOADER_STATE: LoaderState = defaultScene
 
 const RECORDING_DURATION_SECONDS = 30;
 
+const interfaceTransition = {
+	duration: 0.7,
+	ease: [0.23, 1, 0.32, 1],
+} as const;
+
 export default function App() {
 	const containerRef = useRef<HTMLDivElement | null>(null);
 	const threeRef = useRef<Three | null>(null);
@@ -46,6 +54,7 @@ export default function App() {
 	const [loaderState, setLoaderState] =
 		useState<LoaderState>(INITIAL_LOADER_STATE);
 	const [isScenePaused, setIsScenePaused] = useState(false);
+	const [isInfoOpen, setIsInfoOpen] = useState(false);
 	const [activeSceneId, setActiveSceneId] = useState<string | null>(
 		defaultScene?.id ?? null,
 	);
@@ -112,6 +121,14 @@ export default function App() {
 
 	const handleReloadScene = useCallback(() => {
 		threeRef.current?.reloadScene();
+	}, []);
+
+	const handleToggleInfo = useCallback(() => {
+		setIsInfoOpen((currentIsInfoOpen) => {
+			const nextIsInfoOpen = !currentIsInfoOpen;
+			threeRef.current?.setInfoVisible(nextIsInfoOpen);
+			return nextIsInfoOpen;
+		});
 	}, []);
 
 	const handleSceneSelect = useCallback((scene: SceneAsset) => {
@@ -213,26 +230,41 @@ export default function App() {
 		<>
 			<div ref={containerRef} className="fixed inset-0 overflow-hidden" />
 
-			<ActionPanel
-				isPaused={isScenePaused}
-				isRecording={isRecording}
-				recordingSecondsRemaining={recordingSecondsRemaining}
-				onDownloadSnapshot={handleDownloadSnapshot}
-				onReload={handleReloadScene}
-				onToggleRecording={handleToggleRecording}
-				onTogglePause={handleTogglePause}
-			/>
+			<TopLeftActions isInfoOpen={isInfoOpen} onToggleInfo={handleToggleInfo} />
 
-			<ControlsPanel
-				settings={sceneSettings}
-				onSettingsChange={setSceneSettings}
-			/>
+			<motion.div
+				className="pointer-events-none fixed inset-0 z-9"
+				initial={false}
+				animate={{
+					opacity: isInfoOpen ? 0 : 1,
+				}}
+				transition={interfaceTransition}
+				aria-hidden={isInfoOpen}
+				inert={isInfoOpen ? true : undefined}
+			>
+				<ActionPanel
+					isPaused={isScenePaused}
+					isRecording={isRecording}
+					recordingSecondsRemaining={recordingSecondsRemaining}
+					onDownloadSnapshot={handleDownloadSnapshot}
+					onReload={handleReloadScene}
+					onToggleRecording={handleToggleRecording}
+					onTogglePause={handleTogglePause}
+				/>
 
-			<ImagePanel
-				activeSceneId={activeSceneId}
-				sceneErrorMessage={sceneErrorMessage}
-				onSceneSelect={handleSceneSelect}
-			/>
+				<ControlsPanel
+					settings={sceneSettings}
+					onSettingsChange={setSceneSettings}
+				/>
+
+				<ImagePanel
+					activeSceneId={activeSceneId}
+					sceneErrorMessage={sceneErrorMessage}
+					onSceneSelect={handleSceneSelect}
+				/>
+			</motion.div>
+
+			<AnimatePresence>{isInfoOpen ? <InfoPanel /> : null}</AnimatePresence>
 
 			<div
 				id="loader"

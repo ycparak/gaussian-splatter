@@ -266,7 +266,7 @@ export default function ControlsPanel({
           y: event.clientY,
         };
       }}
-      className="fixed bottom-5 left-5 z-9 flex h-9 w-82 items-center overflow-visible border border-white/10 bg-neutral-900/65 px-0.5 backdrop-blur-[20px]"
+      className="pointer-events-auto fixed bottom-5 left-5 z-9 flex h-9 w-82 items-center overflow-visible border border-white/10 bg-neutral-900/65 px-0.5 backdrop-blur-[20px]"
       style={{
         borderRadius: "10px",
         WebkitTapHighlightColor: "transparent",

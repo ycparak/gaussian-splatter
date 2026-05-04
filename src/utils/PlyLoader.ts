@@ -63,7 +63,8 @@ type SimulationUniforms = Record<
 	| "uFlowFieldFrequency"
 	| "uTimeScale"
 	| "uDecayRate"
-	| "uReturnForce",
+	| "uReturnForce"
+	| "uInfoProgress",
 	{ value: unknown }
 >;
 
@@ -77,7 +78,10 @@ type RenderUniforms = Record<never, never> & {
 	uDiffuseLight: { value: number };
 	uSpecularLight: { value: number };
 	uShininess: { value: number };
+	uInfoProgress: { value: number };
 };
+
+const INFO_TRANSITION_DURATION_SECONDS = 2.3;
 
 export default class PlyLoader {
 	url: string;
@@ -108,6 +112,8 @@ export default class PlyLoader {
 	decayRate: number;
 	returnForce: number;
 	morphDuration: number;
+	infoProgress = 0;
+	infoTargetProgress = 0;
 	lighting: SceneSettings["lighting"];
 	readonly renderer: THREE.WebGLRenderer;
 
@@ -167,6 +173,10 @@ export default class PlyLoader {
 		return true;
 	}
 
+	setInfoVisible(isVisible: boolean): void {
+		this.infoTargetProgress = isVisible ? 1 : 0;
+	}
+
 	update(delta: number, elapsed: number): void {
 		if (
 			this.isDisposed ||
@@ -181,6 +191,7 @@ export default class PlyLoader {
 		uniforms.uTime.value = elapsed;
 		uniforms.uDeltaTime.value = delta;
 		this.#updateMorph(delta);
+		this.#updateInfoProgress(delta);
 		this.gpgpu.compute();
 		this.#getRenderUniforms().uParticlesTexture.value =
 			this.gpgpu.getCurrentRenderTarget(this.particlesVariable).texture;
@@ -455,6 +466,7 @@ export default class PlyLoader {
 		uniforms.uTimeScale = { value: this.timeScale };
 		uniforms.uDecayRate = { value: this.decayRate };
 		uniforms.uReturnForce = { value: this.returnForce };
+		uniforms.uInfoProgress = { value: this.infoProgress };
 
 		const initError = this.gpgpu.init();
 		if (initError) {
@@ -516,6 +528,7 @@ export default class PlyLoader {
 				uDiffuseLight: { value: this.lighting.diffuse },
 				uSpecularLight: { value: this.lighting.specular },
 				uShininess: { value: this.lighting.shininess },
+				uInfoProgress: { value: this.infoProgress },
 			},
 			transparent: true,
 			depthWrite: true,
@@ -710,6 +723,28 @@ export default class PlyLoader {
 		if (progress >= 1) {
 			this.#finishMorph();
 		}
+	}
+
+	#updateInfoProgress(delta: number): void {
+		if (!this.particlesVariable || !this.material) return;
+
+		const step = delta / INFO_TRANSITION_DURATION_SECONDS;
+		if (this.infoTargetProgress > this.infoProgress) {
+			this.infoProgress = Math.min(
+				this.infoProgress + step,
+				this.infoTargetProgress,
+			);
+		} else {
+			this.infoProgress = Math.max(
+				this.infoProgress - step,
+				this.infoTargetProgress,
+			);
+		}
+
+		const simulationUniforms = this.#getSimulationUniforms();
+		const renderUniforms = this.#getRenderUniforms();
+		simulationUniforms.uInfoProgress.value = this.infoProgress;
+		renderUniforms.uInfoProgress.value = this.infoProgress;
 	}
 
 	#finishMorph(): void {

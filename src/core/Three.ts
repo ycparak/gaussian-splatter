@@ -94,6 +94,13 @@ export default class Three {
 		this.renderStillFrame();
 	}
 
+	setInfoVisible(isVisible: boolean): void {
+		this.scene?.setInfoVisible(isVisible);
+		if (this.isPaused) {
+			this.renderStillFrame();
+		}
+	}
+
 	setPaused(isPaused: boolean): void {
 		if (this.isDisposed || this.isPaused === isPaused) return;
 

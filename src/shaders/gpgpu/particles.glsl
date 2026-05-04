@@ -9,6 +9,7 @@ uniform float uFlowFieldFrequency;
 uniform float uTimeScale;
 uniform float uDecayRate;
 uniform float uReturnForce;
+uniform float uInfoProgress;
 
 #include ../includes/simplexNoise4d.glsl
 
@@ -19,6 +20,7 @@ void main() {
   vec4 base = texture(uBase, uv);
   vec4 target = texture(uTarget, uv);
   float morphProgress = uMorphProgress * uMorphProgress * (3.0 - 2.0 * uMorphProgress);
+  float infoProgress = uInfoProgress * uInfoProgress * (3.0 - 2.0 * uInfoProgress);
   vec3 morphBase = mix(base.xyz, target.xyz, morphProgress);
 
   // Dead
@@ -42,10 +44,18 @@ void main() {
     );
     flowField = normalize(flowField);
     particle.xyz += flowField * uDeltaTime * strength * uFlowFieldStrength;
-    particle.xyz += (morphBase - particle.xyz) * uDeltaTime * uReturnForce * smoothstep(0.0, 0.08, uMorphProgress);
+    particle.xyz += (morphBase - particle.xyz) * uDeltaTime * uReturnForce * smoothstep(0.0, 0.08, uMorphProgress) * (1.0 - infoProgress);
+
+    vec3 dispersal = vec3(
+      simplexNoise4d(vec4(base.xyz * 0.42 + vec3(17.0), 1.0)),
+      simplexNoise4d(vec4(base.xyz * 0.42 + vec3(31.0), 1.0)),
+      simplexNoise4d(vec4(base.xyz * 0.42 + vec3(47.0), 1.0))
+    );
+    vec3 dispersalDirection = normalize(vec3(morphBase.xy * vec2(1.4, 1.0) + dispersal.xy * 0.9, 1.0 + abs(dispersal.z)));
+    particle.xyz += dispersalDirection * uDeltaTime * infoProgress * 14.0;
 
     // Decay
-    particle.a += uDeltaTime * uDecayRate;
+    particle.a += uDeltaTime * uDecayRate * (1.0 + infoProgress * 4.0);
   }
 
   gl_FragColor = particle;
