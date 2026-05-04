@@ -4,16 +4,10 @@ import { NavigationMenu } from "@base-ui/react/navigation-menu";
 import { ChevronDown } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import type { Dispatch, ReactNode, SetStateAction } from "react";
-import { useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 
 import type { SceneSettings } from "@/shared/types";
-import {
-  CONTROL_SECTIONS,
-  type ControlDefinition,
-  type ControlSectionDefinition,
-  type SettingsGroup,
-} from "@/src/components/sceneControlsConfig";
 import {
   BloomIcon,
   CameraIcon,
@@ -25,6 +19,12 @@ import {
   ResetIcon,
   SceneIcon,
 } from "@/src/components/icons";
+import {
+  CONTROL_SECTIONS,
+  type ControlDefinition,
+  type ControlSectionDefinition,
+  type SettingsGroup,
+} from "@/src/components/sceneControlsConfig";
 import Button from "@/src/components/ui/button";
 import RangeSlider from "@/src/components/ui/range-slider";
 import Toggle from "@/src/components/ui/toggle";
@@ -101,6 +101,13 @@ const labelTransition = {
   duration: 0.34,
 } as const;
 
+const panelHoverBuffer = {
+  top: 400,
+  right: 400,
+  bottom: 12,
+  left: 20,
+} as const;
+
 interface ControlsPanelProps {
   settings: SceneSettings;
   onSettingsChange: Dispatch<SetStateAction<SceneSettings>>;
@@ -111,10 +118,78 @@ export default function ControlsPanel({
   onSettingsChange,
 }: ControlsPanelProps) {
   const anchorRef = useRef<HTMLElement | null>(null);
+  const panelRef = useRef<HTMLDivElement | null>(null);
+  const pointerPositionRef = useRef<{ x: number; y: number } | null>(null);
   const rootRef = useRef<HTMLDivElement | null>(null);
   const [activeTab, setActiveTab] = useState<TabId | null>(null);
   const activeTabConfig =
     tabs.find((tab) => tab.id === activeTab) ?? fallbackTab;
+
+  const isPointInControlsArea = useCallback(
+    (point = pointerPositionRef.current) => {
+      if (!point) {
+        return false;
+      }
+
+      const menuBounds = anchorRef.current?.getBoundingClientRect();
+
+      if (
+        menuBounds &&
+        point.x >= menuBounds.left &&
+        point.x <= menuBounds.right &&
+        point.y >= menuBounds.top &&
+        point.y <= menuBounds.bottom
+      ) {
+        return true;
+      }
+
+      const panelBounds = panelRef.current?.getBoundingClientRect();
+
+      if (!panelBounds) {
+        return false;
+      }
+
+      return (
+        point.x >= panelBounds.left - panelHoverBuffer.left &&
+        point.x <= panelBounds.right + panelHoverBuffer.right &&
+        point.y >= panelBounds.top - panelHoverBuffer.top &&
+        point.y <= panelBounds.bottom + panelHoverBuffer.bottom
+      );
+    },
+    [],
+  );
+
+  const handleValueChange = useCallback(
+    (value: TabId | null) => {
+      if (value === null && isPointInControlsArea()) {
+        return;
+      }
+
+      setActiveTab(value);
+    },
+    [isPointInControlsArea],
+  );
+
+  useEffect(() => {
+    if (!activeTab) {
+      return;
+    }
+
+    function handlePointerMove(event: PointerEvent) {
+      const point = { x: event.clientX, y: event.clientY };
+      pointerPositionRef.current = point;
+
+      if (!isPointInControlsArea(point)) {
+        setActiveTab(null);
+      }
+    }
+
+    window.addEventListener("pointermove", handlePointerMove);
+
+    return () => {
+      window.removeEventListener("pointermove", handlePointerMove);
+    };
+  }, [activeTab, isPointInControlsArea]);
 
   function updateSetting<
     TGroup extends keyof SceneSettings,
@@ -182,9 +257,15 @@ export default function ControlsPanel({
       }}
       aria-label="Scene controls"
       value={activeTab}
-      onValueChange={(value) => setActiveTab(value)}
+      onValueChange={handleValueChange}
       delay={0}
       closeDelay={0}
+      onPointerMove={(event) => {
+        pointerPositionRef.current = {
+          x: event.clientX,
+          y: event.clientY,
+        };
+      }}
       className="fixed bottom-5 left-5 z-9 flex h-9 w-82 items-center overflow-hidden border border-white/10 bg-neutral-900/65 px-0.5 backdrop-blur-[20px]"
       style={{
         borderRadius: "10px",
@@ -318,7 +399,10 @@ export default function ControlsPanel({
           collisionAvoidance={{ side: "none", align: "none" }}
           className="z-9"
         >
-          <NavigationMenu.Popup className="w-82 overflow-hidden rounded-[10px] transition-[opacity,transform,width,height] duration-[250ms] ease-out data-[ending-style]:translate-y-2 data-[ending-style]:opacity-0 data-[starting-style]:translate-y-2 data-[starting-style]:opacity-0">
+          <NavigationMenu.Popup
+            ref={panelRef}
+            className="w-82 overflow-hidden rounded-[10px] transition-[opacity,transform,width,height] duration-[250ms] ease-out data-[ending-style]:translate-y-2 data-[ending-style]:opacity-0 data-[starting-style]:translate-y-2 data-[starting-style]:opacity-0"
+          >
             <NavigationMenu.Viewport className="relative w-82 overflow-visible" />
           </NavigationMenu.Popup>
         </NavigationMenu.Positioner>
@@ -430,7 +514,7 @@ function ColorControl({
       <input
         type="color"
         value={value}
-        tabIndex={-1}
+        tabIndex={tabIndex}
         className="absolute inset-0 size-full cursor-pointer opacity-0"
         onChange={(event) => onChange(event.target.value)}
       />
@@ -465,7 +549,7 @@ function SelectControl({
       </span>
       <select
         value={value}
-        tabIndex={-1}
+        tabIndex={tabIndex}
         className="absolute inset-0 size-full cursor-pointer opacity-0"
         onChange={(event) => onChange(event.target.value)}
       >
