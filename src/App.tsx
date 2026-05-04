@@ -258,13 +258,12 @@ export default function App() {
 					onSettingsChange={setSceneSettings}
 				/>
 
-				{isUploadUiEnabled ? (
-					<ImagePanel
-						activeSceneId={activeSceneId}
-						sceneErrorMessage={sceneErrorMessage}
-						onSceneSelect={handleSceneSelect}
-					/>
-				) : null}
+				<ImagePanel
+					activeSceneId={activeSceneId}
+					enableUploads={isUploadUiEnabled}
+					sceneErrorMessage={sceneErrorMessage}
+					onSceneSelect={handleSceneSelect}
+				/>
 			</motion.div>
 
 			<AnimatePresence>{isInfoOpen ? <InfoPanel /> : null}</AnimatePresence>

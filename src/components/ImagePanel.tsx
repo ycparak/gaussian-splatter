@@ -41,6 +41,7 @@ const bundledPlyPercentById: Record<string, 11 | 12 | 13> = {
 
 interface ImagePanelProps {
 	activeSceneId: string | null;
+	enableUploads: boolean;
 	sceneErrorMessage: string | null;
 	onSceneSelect: (scene: SceneAsset) => void;
 }
@@ -55,6 +56,7 @@ interface JobResponse {
 
 export default function ImagePanel({
 	activeSceneId,
+	enableUploads,
 	sceneErrorMessage,
 	onSceneSelect,
 }: ImagePanelProps) {
@@ -70,8 +72,9 @@ export default function ImagePanel({
 	const [job, setJob] = useState<GenerationJob | null>(null);
 	const [message, setMessage] = useState("");
 	const scenes = useMemo(
-		() => [...bundledScenes, ...generatedScenes],
-		[generatedScenes],
+		() =>
+			enableUploads ? [...bundledScenes, ...generatedScenes] : bundledScenes,
+		[enableUploads, generatedScenes],
 	);
 	const isBusy =
 		job?.status === "queued" ||
@@ -80,6 +83,8 @@ export default function ImagePanel({
 
 	const refreshScenes = useCallback(
 		async (options: { silent?: boolean } = {}) => {
+			if (!enableUploads) return;
+
 			try {
 				const payload = await fetchJson<ScenesResponse>("/api/scenes");
 				startTransition(() => setGeneratedScenes(payload.scenes ?? []));
@@ -90,16 +95,18 @@ export default function ImagePanel({
 				}
 			}
 		},
-		[],
+		[enableUploads],
 	);
 
 	useEffect(() => {
+		if (!enableUploads) return;
+
 		void refreshScenes({ silent: true });
 
 		return () => {
 			jobPollControllerRef.current?.abort();
 		};
-	}, [refreshScenes]);
+	}, [enableUploads, refreshScenes]);
 
 	useEffect(() => {
 		if (!isOpen) return;
@@ -134,7 +141,20 @@ export default function ImagePanel({
 		};
 	}, [selectedFile]);
 
+	useEffect(() => {
+		if (enableUploads) return;
+
+		jobPollControllerRef.current?.abort();
+		jobPollControllerRef.current = null;
+		setSelectedFile(null);
+		setPreviewUrl("");
+		setJob(null);
+		setMessage("");
+		setIsDragging(false);
+	}, [enableUploads]);
+
 	function handlePickFile(file: File | null) {
+		if (!enableUploads) return;
 		if (!file) return;
 
 		if (!file.type.startsWith("image/")) {
@@ -155,6 +175,7 @@ export default function ImagePanel({
 	}
 
 	async function handleGenerate() {
+		if (!enableUploads) return;
 		if (!selectedFile || isBusy) return;
 
 		const formData = new FormData();
@@ -232,29 +253,31 @@ export default function ImagePanel({
 						style={{ borderRadius: "10px", transformOrigin: "right bottom" }}
 						className="pointer-events-auto fixed right-5 bottom-[68px] flex max-h-[calc(100dvh-88px)] w-[min(320px,calc(100vw-40px))] flex-col gap-1 overflow-hidden border border-white/5 bg-neutral-900/70 p-1 backdrop-blur-[20px]"
 					>
-						<UploadDropzone
-							fileInputRef={fileInputRef}
-							isDragging={isDragging}
-							previewUrl={previewUrl}
-							selectedFile={selectedFile}
-							isBusy={isBusy}
-							onInputChange={handleFileInputChange}
-							onPickClick={() => fileInputRef.current?.click()}
-							onDragEnter={(event) => {
-								event.preventDefault();
-								setIsDragging(true);
-							}}
-							onDragOver={(event) => event.preventDefault()}
-							onDragLeave={() => setIsDragging(false)}
-							onDrop={(event) => {
-								event.preventDefault();
-								setIsDragging(false);
-								handlePickFile(event.dataTransfer.files?.[0] ?? null);
-							}}
-							onGenerate={() => void handleGenerate()}
-						/>
+						{enableUploads ? (
+							<UploadDropzone
+								fileInputRef={fileInputRef}
+								isDragging={isDragging}
+								previewUrl={previewUrl}
+								selectedFile={selectedFile}
+								isBusy={isBusy}
+								onInputChange={handleFileInputChange}
+								onPickClick={() => fileInputRef.current?.click()}
+								onDragEnter={(event) => {
+									event.preventDefault();
+									setIsDragging(true);
+								}}
+								onDragOver={(event) => event.preventDefault()}
+								onDragLeave={() => setIsDragging(false)}
+								onDrop={(event) => {
+									event.preventDefault();
+									setIsDragging(false);
+									handlePickFile(event.dataTransfer.files?.[0] ?? null);
+								}}
+								onGenerate={() => void handleGenerate()}
+							/>
+						) : null}
 
-						{message || sceneErrorMessage ? (
+						{enableUploads && (message || sceneErrorMessage) ? (
 							<StatusLine
 								status={sceneErrorMessage ? "error" : (job?.status ?? "idle")}
 								message={sceneErrorMessage ?? message}
