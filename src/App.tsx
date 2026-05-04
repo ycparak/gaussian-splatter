@@ -1,7 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { SceneLoadCallbacks, SceneSettings } from "@/shared/types";
+import type {
+	SceneAsset,
+	SceneLoadCallbacks,
+	SceneSettings,
+} from "@/shared/types";
 import ActionPanel from "@/src/components/ActionPanel";
 import ControlsPanel from "@/src/components/ControlsPanel";
+import ImagePanel from "@/src/components/ImagePanel";
 import {
 	cloneSceneSettings,
 	DEFAULT_SCENE_SETTINGS,
@@ -41,6 +46,12 @@ export default function App() {
 	const [loaderState, setLoaderState] =
 		useState<LoaderState>(INITIAL_LOADER_STATE);
 	const [isScenePaused, setIsScenePaused] = useState(false);
+	const [activeSceneId, setActiveSceneId] = useState<string | null>(
+		defaultScene?.id ?? null,
+	);
+	const [sceneErrorMessage, setSceneErrorMessage] = useState<string | null>(
+		null,
+	);
 	const [isRecording, setIsRecording] = useState(false);
 	const [recordingSecondsRemaining, setRecordingSecondsRemaining] = useState(
 		RECORDING_DURATION_SECONDS,
@@ -103,6 +114,12 @@ export default function App() {
 		threeRef.current?.reloadScene();
 	}, []);
 
+	const handleSceneSelect = useCallback((scene: SceneAsset) => {
+		setSceneErrorMessage(null);
+		setActiveSceneId(scene.id);
+		threeRef.current?.loadScene(scene);
+	}, []);
+
 	const handleTogglePause = useCallback(() => {
 		const nextIsPaused = threeRef.current?.togglePaused() ?? false;
 		setIsScenePaused(nextIsPaused);
@@ -122,6 +139,8 @@ export default function App() {
 
 		const sceneLoadCallbacks: SceneLoadCallbacks = {
 			onLoadStart: (asset) => {
+				setSceneErrorMessage(null);
+				setActiveSceneId(asset.id);
 				if (!hasCompletedInitialLoadRef.current) {
 					setLoaderState({
 						visible: true,
@@ -142,6 +161,8 @@ export default function App() {
 				}
 			},
 			onLoadSuccess: (_asset) => {
+				setSceneErrorMessage(null);
+				setActiveSceneId(_asset.id);
 				hasCompletedInitialLoadRef.current = true;
 				setLoaderState({
 					visible: false,
@@ -151,6 +172,7 @@ export default function App() {
 				});
 			},
 			onLoadError: (_asset, error) => {
+				setSceneErrorMessage(error.message);
 				if (!hasCompletedInitialLoadRef.current) {
 					setLoaderState({
 						visible: true,
@@ -204,6 +226,12 @@ export default function App() {
 			<ControlsPanel
 				settings={sceneSettings}
 				onSettingsChange={setSceneSettings}
+			/>
+
+			<ImagePanel
+				activeSceneId={activeSceneId}
+				sceneErrorMessage={sceneErrorMessage}
+				onSceneSelect={handleSceneSelect}
 			/>
 
 			<div
