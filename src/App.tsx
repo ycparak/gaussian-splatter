@@ -10,6 +10,7 @@ import ControlsPanel from "@/src/components/ControlsPanel";
 import ImagePanel from "@/src/components/ImagePanel";
 import InfoPanel from "@/src/components/InfoPanel";
 import TopLeftActions from "@/src/components/TopLeftActions";
+import { isUploadUiEnabled } from "@/src/config/runtime";
 import {
 	cloneSceneSettings,
 	DEFAULT_SCENE_SETTINGS,
@@ -257,11 +258,13 @@ export default function App() {
 					onSettingsChange={setSceneSettings}
 				/>
 
-				<ImagePanel
-					activeSceneId={activeSceneId}
-					sceneErrorMessage={sceneErrorMessage}
-					onSceneSelect={handleSceneSelect}
-				/>
+				{isUploadUiEnabled ? (
+					<ImagePanel
+						activeSceneId={activeSceneId}
+						sceneErrorMessage={sceneErrorMessage}
+						onSceneSelect={handleSceneSelect}
+					/>
+				) : null}
 			</motion.div>
 
 			<AnimatePresence>{isInfoOpen ? <InfoPanel /> : null}</AnimatePresence>

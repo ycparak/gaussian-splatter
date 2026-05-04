@@ -20,3 +20,11 @@ declare module "*.vert" {
 	const shaderSource: string;
 	export default shaderSource;
 }
+
+interface ImportMetaEnv {
+	readonly VITE_ENABLE_UPLOADS?: string;
+}
+
+interface ImportMeta {
+	readonly env: ImportMetaEnv;
+}
