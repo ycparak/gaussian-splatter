@@ -21,5 +21,6 @@
 		},
 		"types": ["vite/client", "node", "bun-types"]
 	},
-	"include": ["src", "shared", "tests", "server", "scripts", "vite.config.ts"]
+	"include": ["src", "shared", "scripts", "vite.config.ts"],
+	"exclude": ["src/components/archived"]
 }

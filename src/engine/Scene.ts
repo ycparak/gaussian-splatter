@@ -4,12 +4,12 @@ import type {
 	SceneSettings,
 	SceneStats,
 } from "@/shared/types";
-import { DEFAULT_SCENE_SETTINGS } from "@/src/config/sceneControls";
-import WebGLContext from "@/src/core/WebGLContext";
-import type { SceneAsset } from "@/src/scenes/availableScenes";
-import { defaultScene } from "@/src/scenes/availableScenes";
-import { CameraRig } from "@/src/utils/CameraRig";
-import PlyLoader from "@/src/utils/PlyLoader";
+import type { SceneAsset } from "@/src/engine/availableScenes";
+import { defaultScene } from "@/src/engine/availableScenes";
+import { CameraRig } from "@/src/engine/CameraRig";
+import PointAssetRuntime from "@/src/engine/PointAssetRuntime";
+import { DEFAULT_SCENE_SETTINGS } from "@/src/engine/sceneSettings";
+import WebGLContext from "@/src/engine/WebGLContext";
 
 interface SceneOptions {
 	settings?: SceneSettings;
@@ -35,7 +35,7 @@ export default class Scene {
 	settings: SceneSettings;
 	onStatsChange: ((stats: SceneStats) => void) | null;
 	sceneLoadCallbacks: SceneLoadCallbacks;
-	plyLoader: PlyLoader | null = null;
+	pointAsset: PointAssetRuntime | null = null;
 	isInfoVisible = false;
 
 	constructor(options: SceneOptions = {}) {
@@ -57,7 +57,7 @@ export default class Scene {
 		if (
 			!options.force &&
 			asset.id === this.activeAssetId &&
-			this.plyLoader?.isReady
+			this.pointAsset?.isReady
 		) {
 			return;
 		}
@@ -70,8 +70,8 @@ export default class Scene {
 			this.sceneLoadCallbacks.onLoadError?.(asset, error);
 		};
 
-		if (!options.force && this.plyLoader?.isReady) {
-			const didStartTransition = this.plyLoader.transitionTo(asset.url, {
+		if (!options.force && this.pointAsset?.isReady) {
+			const didStartTransition = this.pointAsset.transitionTo(asset.url, {
 				duration: this.settings.particles.morphDuration,
 				onProgress,
 				onLoad: () => this.#handleAssetReady(asset),
@@ -81,22 +81,22 @@ export default class Scene {
 			if (didStartTransition) return;
 		}
 
-		this.plyLoader?.dispose();
-		this.plyLoader = null;
+		this.pointAsset?.dispose();
+		this.pointAsset = null;
 		this.scene.remove(...this.scene.children);
 		const renderer = this.context.renderer;
 		if (!renderer) {
 			throw new Error("WebGL renderer is not available");
 		}
 
-		this.plyLoader = new PlyLoader(asset.url, {
+		this.pointAsset = new PointAssetRuntime(asset.url, {
 			renderer,
 			settings: this.settings,
 			onProgress,
 			onLoad: (points) => this.#showLoadedPoints(points, asset),
 			onError,
 		});
-		this.plyLoader.setInfoVisible(this.isInfoVisible);
+		this.pointAsset.setInfoVisible(this.isInfoVisible);
 	}
 
 	reloadAsset(): void {
@@ -105,13 +105,13 @@ export default class Scene {
 
 	setInfoVisible(isVisible: boolean): void {
 		this.isInfoVisible = isVisible;
-		this.plyLoader?.setInfoVisible(isVisible);
+		this.pointAsset?.setInfoVisible(isVisible);
 	}
 
 	animate(delta: number, elapsed: number): void {
 		if (this.isDisposed) return;
 		this.cameraRig.update(delta);
-		this.plyLoader?.update(delta, elapsed);
+		this.pointAsset?.update(delta, elapsed);
 	}
 
 	onResize(width: number, height: number): void {
@@ -122,7 +122,7 @@ export default class Scene {
 		this.aspectRatio = width / height;
 		this.camera.aspect = this.aspectRatio;
 		this.camera.updateProjectionMatrix();
-		this.plyLoader?.onResize(width, height);
+		this.pointAsset?.onResize(width, height);
 	}
 
 	applySettings(settings: SceneSettings = DEFAULT_SCENE_SETTINGS): void {
@@ -141,26 +141,26 @@ export default class Scene {
 		this.camera.updateProjectionMatrix();
 		this.cameraRig.applySettings(settings.camera);
 
-		if (this.plyLoader?.points) {
-			this.#applyPointTransforms(this.plyLoader.points);
+		if (this.pointAsset?.points) {
+			this.#applyPointTransforms(this.pointAsset.points);
 		}
 
-		this.plyLoader?.applySettings(settings);
+		this.pointAsset?.applySettings(settings);
 	}
 
 	getSceneStats(): SceneStats {
 		return {
 			activeAssetId: this.activeAssetId,
-			particleCount: this.plyLoader?.vertexCount ?? 0,
+			particleCount: this.pointAsset?.vertexCount ?? 0,
 		};
 	}
 
 	dispose(): void {
 		this.isDisposed = true;
 		this.cameraRig.dispose();
-		this.plyLoader?.dispose();
+		this.pointAsset?.dispose();
 		this.scene.clear();
-		this.plyLoader = null;
+		this.pointAsset = null;
 	}
 
 	#createScene(): THREE.Scene {
@@ -226,7 +226,7 @@ export default class Scene {
 
 		this.activeAssetId = asset.id;
 		this.activeAsset = asset;
-		this.plyLoader?.applySettings(this.settings);
+		this.pointAsset?.applySettings(this.settings);
 		const stats = this.getSceneStats();
 		this.onStatsChange?.(stats);
 		this.sceneLoadCallbacks.onLoadSuccess?.(asset, stats);

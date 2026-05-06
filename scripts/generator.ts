@@ -10,12 +10,12 @@ import {
 } from "node:fs/promises";
 import { extname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { packPlyFile } from "../scripts/pgs-format";
 import type {
 	GeneratedScene,
 	GenerationJob,
 	SceneManifest,
 } from "../shared/types";
+import { packPlyFile } from "./pgs-format";
 import { SceneManifestStore } from "./sceneManifestStore";
 
 const PORT = Number.parseInt(process.env.PORT ?? "8787", 10);

@@ -52,13 +52,13 @@ export function Toggle({
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       className={cn(
-        "relative h-9 w-full touch-none select-none overflow-hidden rounded-[10px] backdrop-blur-[20px] outline-none",
+        "relative h-9 w-full touch-none select-none overflow-hidden rounded-[10px] backdrop-blur-[10px] outline-none",
         shellClassName,
         className,
       )}
       style={{
-        backdropFilter: "blur(20px)",
-        WebkitBackdropFilter: "blur(20px)",
+        backdropFilter: "blur(10px)",
+        WebkitBackdropFilter: "blur(10px)",
         WebkitTapHighlightColor: "transparent",
         ...style,
       }}
@@ -79,6 +79,8 @@ export function Toggle({
   );
 }
 
+export default Toggle;
+
 function getShellClassName(isChecked: boolean, isHovered: boolean) {
   if (isChecked) {
     return isHovered ? "bg-neutral-600/50" : "bg-neutral-700/50";
@@ -86,5 +88,3 @@ function getShellClassName(isChecked: boolean, isHovered: boolean) {
 
   return isHovered ? "bg-neutral-700/50" : "bg-neutral-800/50";
 }
-
-export default Toggle;

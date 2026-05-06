@@ -4,8 +4,8 @@ import { OutputPass } from "three/examples/jsm/postprocessing/OutputPass.js";
 import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass.js";
 import { UnrealBloomPass } from "three/examples/jsm/postprocessing/UnrealBloomPass.js";
 import type { SceneSettings } from "@/shared/types";
-import { DEFAULT_SCENE_SETTINGS } from "@/src/config/sceneControls";
-import ColorAdjustPass from "@/src/utils/ColorAdjustPass";
+import ColorAdjustPass from "@/src/engine/ColorAdjustPass";
+import { DEFAULT_SCENE_SETTINGS } from "@/src/engine/sceneSettings";
 
 type DisposablePass = {
 	dispose?: () => void;

@@ -6,7 +6,7 @@
 	"packageManager": "bun@1.2.13",
 	"scripts": {
 		"dev": "vite",
-		"server": "bun server/generator.ts",
+		"server": "bun scripts/generator.ts",
 		"start": "bun run dev & bun run server & wait",
 		"build": "vite build",
 		"preview": "vite preview",
@@ -35,7 +35,6 @@
 		"@tailwindcss/vite": "^4.1.18",
 		"class-variance-authority": "^0.7.1",
 		"clsx": "^2.1.1",
-		"lucide-react": "^1.14.0",
 		"motion": "^12.38.0",
 		"react": "^19.2.5",
 		"react-dom": "^19.2.5",

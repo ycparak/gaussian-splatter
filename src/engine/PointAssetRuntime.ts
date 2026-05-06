@@ -1,18 +1,11 @@
 import * as THREE from "three";
 import { GPUComputationRenderer } from "three/examples/jsm/misc/GPUComputationRenderer.js";
-import {
-	PGS_COLOR_RGB565,
-	PGS_HEADER_BYTES,
-	PGS_MAGIC,
-	PGS_VERSION,
-	PLY_TYPE_SIZES,
-	SH_C0,
-} from "@/shared/pgs";
+import { parsePointAsset, resamplePointAsset } from "@/shared/pointAssetData";
 import type { ParsedPointAsset, SceneSettings } from "@/shared/types";
-import { DEFAULT_SCENE_SETTINGS } from "@/src/config/sceneControls";
-import gpgpuParticlesShader from "@/src/shaders/gpgpu/particles.glsl";
-import fragmentShader from "@/src/shaders/particles.frag";
-import vertexShader from "@/src/shaders/particles.vert";
+import { DEFAULT_SCENE_SETTINGS } from "@/src/engine/sceneSettings";
+import gpgpuParticlesShader from "@/src/engine/shaders/gpgpu/particles.glsl";
+import fragmentShader from "@/src/engine/shaders/particles.frag";
+import vertexShader from "@/src/engine/shaders/particles.vert";
 
 type PointsMesh = THREE.Points<THREE.BufferGeometry, THREE.ShaderMaterial>;
 type GpuVariable = ReturnType<GPUComputationRenderer["addVariable"]>;
@@ -25,7 +18,7 @@ interface TransitionOptions {
 	onError?: (error: Error) => void;
 }
 
-interface PlyLoaderOptions {
+interface PointAssetRuntimeOptions {
 	renderer: THREE.WebGLRenderer;
 	settings?: SceneSettings;
 	onLoad?: (points: PointsMesh) => void;
@@ -44,12 +37,6 @@ interface MorphState {
 	targetData: ParsedPointAsset;
 	onLoad?: (points: PointsMesh) => void;
 	url: string;
-}
-
-interface ParsedHeader {
-	vertexCount: number;
-	properties: Map<string, number>;
-	stride: number;
 }
 
 type SimulationUniforms = Record<
@@ -83,7 +70,7 @@ type RenderUniforms = Record<never, never> & {
 
 const INFO_TRANSITION_DURATION_SECONDS = 2.3;
 
-export default class PlyLoader {
+export default class PointAssetRuntime {
 	url: string;
 	points: PointsMesh | null = null;
 	material: THREE.ShaderMaterial | null = null;
@@ -117,7 +104,7 @@ export default class PlyLoader {
 	lighting: SceneSettings["lighting"];
 	readonly renderer: THREE.WebGLRenderer;
 
-	constructor(url: string, options: PlyLoaderOptions) {
+	constructor(url: string, options: PointAssetRuntimeOptions) {
 		this.url = url;
 		this.onLoad = options.onLoad ?? null;
 		this.onProgress = options.onProgress ?? null;
@@ -166,7 +153,7 @@ export default class PlyLoader {
 				if (error instanceof Error && error.name === "AbortError") return;
 				const normalizedError =
 					error instanceof Error ? error : new Error(String(error));
-				console.error("PLY transition error:", normalizedError);
+				console.error("Point asset transition error:", normalizedError);
 				options.onError?.(normalizedError);
 			});
 
@@ -285,7 +272,7 @@ export default class PlyLoader {
 
 				const normalizedError =
 					error instanceof Error ? error : new Error(String(error));
-				console.error("PLY load error:", normalizedError);
+				console.error("Point asset load error:", normalizedError);
 				this.onError?.(normalizedError);
 			});
 	}
@@ -304,135 +291,7 @@ export default class PlyLoader {
 			url,
 			options.onProgress,
 		);
-		return this.#parse(buffer);
-	}
-
-	#parse(buffer: ArrayBuffer): ParsedPointAsset {
-		return this.#isPgs(buffer)
-			? this.#parsePgs(buffer)
-			: this.#parsePly(buffer);
-	}
-
-	#parsePgs(buffer: ArrayBuffer): ParsedPointAsset {
-		const dataView = new DataView(buffer);
-		const magic = new TextDecoder().decode(new Uint8Array(buffer, 0, 4));
-		const version = dataView.getUint32(4, true);
-		const vertexCount = dataView.getUint32(8, true);
-		const colorMode = dataView.getUint8(12);
-
-		if (magic !== PGS_MAGIC) {
-			throw new Error("Unsupported PGS magic header");
-		}
-
-		if (version !== PGS_VERSION) {
-			throw new Error(`Unsupported PGS version: ${version}`);
-		}
-
-		if (colorMode !== PGS_COLOR_RGB565) {
-			throw new Error(`Unsupported PGS color mode: ${colorMode}`);
-		}
-
-		const min = [
-			dataView.getFloat32(16, true),
-			dataView.getFloat32(20, true),
-			dataView.getFloat32(24, true),
-		] as const;
-		const max = [
-			dataView.getFloat32(28, true),
-			dataView.getFloat32(32, true),
-			dataView.getFloat32(36, true),
-		] as const;
-
-		const positions = new Float32Array(vertexCount * 3);
-		const colors = new Float32Array(vertexCount * 3);
-		let offset = PGS_HEADER_BYTES;
-
-		for (let index = 0; index < vertexCount; index++) {
-			const i3 = index * 3;
-			const qx = dataView.getUint16(offset, true);
-			const qy = dataView.getUint16(offset + 2, true);
-			const qz = dataView.getUint16(offset + 4, true);
-			const rgb565 = dataView.getUint16(offset + 6, true);
-
-			positions[i3] = this.#unquantize(qx, min[0], max[0]);
-			positions[i3 + 1] = this.#unquantize(qy, min[1], max[1]);
-			positions[i3 + 2] = this.#unquantize(qz, min[2], max[2]);
-
-			colors[i3] = ((rgb565 >> 11) & 0x1f) / 31;
-			colors[i3 + 1] = ((rgb565 >> 5) & 0x3f) / 63;
-			colors[i3 + 2] = (rgb565 & 0x1f) / 31;
-			offset += 8;
-		}
-
-		return { positions, colors, vertexCount };
-	}
-
-	#parsePly(buffer: ArrayBuffer): ParsedPointAsset {
-		const headerEnd = this.#findHeaderEnd(buffer);
-		const headerText = new TextDecoder().decode(
-			new Uint8Array(buffer, 0, headerEnd),
-		);
-		const dataStart = headerEnd + "end_header\n".length;
-		const { vertexCount, properties, stride } = this.#parseHeader(headerText);
-		const dataView = new DataView(buffer, dataStart);
-		const positions = new Float32Array(vertexCount * 3);
-		const colors = new Float32Array(vertexCount * 3);
-
-		const xOff = properties.get("x");
-		const yOff = properties.get("y");
-		const zOff = properties.get("z");
-		const dc0Off = properties.get("f_dc_0");
-		const dc1Off = properties.get("f_dc_1");
-		const dc2Off = properties.get("f_dc_2");
-		const hasSHColors =
-			dc0Off !== undefined && dc1Off !== undefined && dc2Off !== undefined;
-
-		if (xOff === undefined || yOff === undefined || zOff === undefined) {
-			throw new Error("PLY header is missing required position properties");
-		}
-
-		for (let index = 0; index < vertexCount; index++) {
-			const base = index * stride;
-			const i3 = index * 3;
-			positions[i3] = dataView.getFloat32(base + xOff, true);
-			positions[i3 + 1] = dataView.getFloat32(base + yOff, true);
-			positions[i3 + 2] = dataView.getFloat32(base + zOff, true);
-
-			if (
-				hasSHColors &&
-				dc0Off !== undefined &&
-				dc1Off !== undefined &&
-				dc2Off !== undefined
-			) {
-				const r = dataView.getFloat32(base + dc0Off, true);
-				const g = dataView.getFloat32(base + dc1Off, true);
-				const b = dataView.getFloat32(base + dc2Off, true);
-				colors[i3] = Math.max(0, Math.min(1, 0.5 + SH_C0 * r));
-				colors[i3 + 1] = Math.max(0, Math.min(1, 0.5 + SH_C0 * g));
-				colors[i3 + 2] = Math.max(0, Math.min(1, 0.5 + SH_C0 * b));
-			} else {
-				colors[i3] = 1;
-				colors[i3 + 1] = 1;
-				colors[i3 + 2] = 1;
-			}
-		}
-
-		return { positions, colors, vertexCount };
-	}
-
-	#isPgs(buffer: ArrayBuffer): boolean {
-		const bytes = new Uint8Array(buffer, 0, 4);
-		return (
-			bytes[0] === 0x50 &&
-			bytes[1] === 0x47 &&
-			bytes[2] === 0x53 &&
-			bytes[3] === 0x31
-		);
-	}
-
-	#unquantize(value: number, min: number, max: number): number {
-		if (max <= min) return min;
-		return min + (value / 65535) * (max - min);
+		return parsePointAsset(buffer);
 	}
 
 	#setupGPGPU(positions: Float32Array, vertexCount: number): void {
@@ -659,7 +518,7 @@ export default class PlyLoader {
 				throw new Error("Source points are not available for morph");
 			}
 
-			const sourceData = this.#resampleData(
+			const sourceData = resamplePointAsset(
 				{
 					positions: this.positions,
 					colors: this.colors,
@@ -681,7 +540,7 @@ export default class PlyLoader {
 			this.#setupParticles(sourceData.colors, transitionVertexCount);
 		}
 
-		const normalizedTarget = this.#resampleData(targetData, this.vertexCount);
+		const normalizedTarget = resamplePointAsset(targetData, this.vertexCount);
 		if (this.targetTexture && this.targetTexture !== this.baseTexture) {
 			this.targetTexture.dispose();
 		}
@@ -787,27 +646,6 @@ export default class PlyLoader {
 		morph.onLoad?.(this.points);
 	}
 
-	#resampleData(data: ParsedPointAsset, vertexCount: number): ParsedPointAsset {
-		if (data.vertexCount === vertexCount) return data;
-
-		const positions = new Float32Array(vertexCount * 3);
-		const colors = new Float32Array(vertexCount * 3);
-
-		for (let index = 0; index < vertexCount; index++) {
-			const sourceIndex = Math.floor((index / vertexCount) * data.vertexCount);
-			const sourceI3 = sourceIndex * 3;
-			const i3 = index * 3;
-			positions[i3] = data.positions[sourceI3] ?? 0;
-			positions[i3 + 1] = data.positions[sourceI3 + 1] ?? 0;
-			positions[i3 + 2] = data.positions[sourceI3 + 2] ?? 0;
-			colors[i3] = data.colors[sourceI3] ?? 0;
-			colors[i3 + 1] = data.colors[sourceI3 + 1] ?? 0;
-			colors[i3 + 2] = data.colors[sourceI3 + 2] ?? 0;
-		}
-
-		return { positions, colors, vertexCount };
-	}
-
 	#setBaseColors(colors: Float32Array): void {
 		if (!this.points) return;
 		const colorAttribute = this.points.geometry.getAttribute(
@@ -824,59 +662,6 @@ export default class PlyLoader {
 		) as THREE.BufferAttribute;
 		colorAttribute.array.set(colors);
 		colorAttribute.needsUpdate = true;
-	}
-
-	#findHeaderEnd(buffer: ArrayBuffer): number {
-		const bytes = new Uint8Array(buffer);
-		const target = "end_header\n";
-
-		for (let index = 0; index < Math.min(bytes.length, 4096); index++) {
-			let isMatch = true;
-			for (let offset = 0; offset < target.length; offset++) {
-				if (bytes[index + offset] !== target.charCodeAt(offset)) {
-					isMatch = false;
-					break;
-				}
-			}
-
-			if (isMatch) {
-				return index;
-			}
-		}
-
-		throw new Error("Could not find PLY header end");
-	}
-
-	#parseHeader(headerText: string): ParsedHeader {
-		const lines = headerText.split("\n");
-		let vertexCount = 0;
-		const properties = new Map<string, number>();
-		let offset = 0;
-		let inVertexElement = false;
-
-		for (const line of lines) {
-			const parts = line.trim().split(/\s+/);
-			if (parts[0] === "element") {
-				if (parts[1] === "vertex") {
-					vertexCount = Number.parseInt(parts[2] ?? "0", 10);
-					inVertexElement = true;
-				} else {
-					inVertexElement = false;
-				}
-			}
-
-			if (parts[0] === "property" && inVertexElement) {
-				const type = parts[1];
-				const name = parts[2];
-				const size = type ? (PLY_TYPE_SIZES[type] ?? 4) : 4;
-				if (name) {
-					properties.set(name, offset);
-				}
-				offset += size;
-			}
-		}
-
-		return { vertexCount, properties, stride: offset };
 	}
 
 	#getPixelRatio(): number {

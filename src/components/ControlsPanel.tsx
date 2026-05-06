@@ -1,37 +1,35 @@
 "use client";
 
 import { NavigationMenu } from "@base-ui/react/navigation-menu";
-import { ChevronDown } from "lucide-react";
-import { AnimatePresence, motion } from "motion/react";
+import { AnimatePresence, m } from "motion/react";
 import type { Dispatch, ReactNode, SetStateAction } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 
 import type { SceneSettings } from "@/shared/types";
-import {
-  BloomIcon,
-  CameraIcon,
-  ColorIcon,
-  LightingIcon,
-  ParticlesIcon,
-  RandomIcon,
-  RendererIcon,
-  ResetIcon,
-  SceneIcon,
-} from "@/src/components/icons";
-import {
-  CONTROL_SECTIONS,
-  type ControlDefinition,
-  type ControlSectionDefinition,
-  type SettingsGroup,
-} from "@/src/components/sceneControlsConfig";
+import { BloomIcon } from "@/src/components/icons/bloom";
+import { CameraIcon } from "@/src/components/icons/camera";
+import { ChevronRightIcon } from "@/src/components/icons/chevron-right";
+import { ColorIcon } from "@/src/components/icons/color";
+import { LightingIcon } from "@/src/components/icons/lighting";
+import { ParticlesIcon } from "@/src/components/icons/particles";
+import { RandomIcon } from "@/src/components/icons/random";
+import { RendererIcon } from "@/src/components/icons/renderer";
+import { ResetIcon } from "@/src/components/icons/reset";
+import { SceneIcon } from "@/src/components/icons/scene";
 import Button from "@/src/components/ui/button";
 import RangeSlider from "@/src/components/ui/range-slider";
 import Toggle from "@/src/components/ui/toggle";
 import {
   cloneSceneSettings,
   DEFAULT_SCENE_SETTINGS,
-} from "@/src/config/sceneControls";
+} from "@/src/engine/sceneSettings";
+import {
+  CONTROL_SECTIONS,
+  type ControlDefinition,
+  type ControlSectionDefinition,
+  type SettingsGroup,
+} from "@/src/lib/sceneControlsConfig";
 import { cn } from "@/src/lib/utils";
 
 type TabId = SettingsGroup;
@@ -266,7 +264,7 @@ export default function ControlsPanel({
           y: event.clientY,
         };
       }}
-      className="pointer-events-auto fixed bottom-5 left-5 z-9 flex h-9 w-82 items-center overflow-visible border border-white/10 bg-neutral-900/65 px-0.5 backdrop-blur-[20px]"
+      className="pointer-events-auto fixed bottom-5 left-5 z-9 flex h-9 w-82 items-center overflow-visible border border-white/10 bg-neutral-900/65 px-0.5 backdrop-blur-[10px]"
       style={{
         borderRadius: "10px",
         WebkitTapHighlightColor: "transparent",
@@ -277,7 +275,7 @@ export default function ControlsPanel({
         className="pointer-events-none flex min-w-0 flex-1 items-center"
       >
         <AnimatePresence initial={false} mode="popLayout">
-          <motion.span
+          <m.span
             key={activeTabConfig.label}
             initial={{
               opacity: 0,
@@ -303,7 +301,7 @@ export default function ControlsPanel({
             className="block truncate pl-4 text-xs leading-3 font-semibold text-neutral-400"
           >
             {activeTabConfig.label}
-          </motion.span>
+          </m.span>
         </AnimatePresence>
       </div>
 
@@ -321,7 +319,7 @@ export default function ControlsPanel({
                 aria-label={tab.label}
                 tabIndex={0}
                 render={
-                  <motion.button
+                  <m.button
                     type="button"
                     data-controls-trigger={tab.id}
                     whileTap={{ scale: 0.925 }}
@@ -339,7 +337,7 @@ export default function ControlsPanel({
                 }
               >
                 {activeTab === tab.id ? (
-                  <motion.span
+                  <m.span
                     layoutId="controls-bubble"
                     className="absolute inset-0 bg-white/10"
                     style={{ borderRadius: "7px" }}
@@ -500,7 +498,7 @@ function ColorControl({
   onChange: (value: string) => void;
 }) {
   return (
-    <label className="relative block h-9 w-full overflow-hidden rounded-[10px] bg-neutral-800/50 backdrop-blur-[20px]">
+    <label className="relative block h-9 w-full overflow-hidden rounded-[10px] bg-neutral-800/50 backdrop-blur-[10px]">
       <span className="pointer-events-none absolute top-1/2 left-4 z-10 -translate-y-1/2 text-xs leading-3 font-semibold text-neutral-400">
         {label}
       </span>
@@ -539,13 +537,13 @@ function SelectControl({
     options.find((option) => option.value === value)?.label ?? value;
 
   return (
-    <div className="relative h-9 w-full overflow-hidden rounded-[10px] bg-neutral-800/50 backdrop-blur-[20px]">
+    <div className="relative h-9 w-full overflow-hidden rounded-[10px] bg-neutral-800/50 backdrop-blur-[10px]">
       <span className="pointer-events-none absolute top-1/2 left-4 z-10 -translate-y-1/2 text-xs leading-3 font-semibold text-neutral-400">
         {label}
       </span>
       <span className="pointer-events-none absolute top-1/2 right-4 z-10 flex items-center gap-1.5 -translate-y-1/2 text-xs leading-3 font-semibold text-neutral-300">
         {selectedLabel}
-        <ChevronDown className="size-3" />
+        <ChevronRightIcon className="size-3 rotate-90" />
       </span>
       <select
         value={value}

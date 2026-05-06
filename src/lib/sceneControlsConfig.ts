@@ -44,16 +44,6 @@ export interface ControlSectionDefinition {
 	controls: ControlDefinition[];
 }
 
-export const DEFAULT_OPEN_SECTIONS: Record<SettingsGroup, boolean> = {
-	particles: true,
-	scene: false,
-	lighting: false,
-	bloom: false,
-	color: true,
-	camera: false,
-	renderer: false,
-};
-
 const TONE_MAPPING_OPTIONS: SelectOption<ToneMappingMode>[] = [
 	{ label: "ACES Filmic", value: "aces" },
 	{ label: "Linear", value: "linear" },
