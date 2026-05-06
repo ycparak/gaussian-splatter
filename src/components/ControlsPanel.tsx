@@ -264,7 +264,7 @@ export default function ControlsPanel({
           y: event.clientY,
         };
       }}
-      className="pointer-events-auto fixed bottom-5 left-5 z-9 flex h-9 w-82 items-center overflow-visible border border-white/10 bg-neutral-900/65 px-0.5 backdrop-blur-[10px]"
+      className="pointer-events-auto fixed bottom-5 left-5 z-9 flex h-9 w-75.5 items-center overflow-visible border border-white/10 bg-neutral-900/65 px-0.5 backdrop-blur-[10px]"
       style={{
         borderRadius: "10px",
         WebkitTapHighlightColor: "transparent",
@@ -305,7 +305,7 @@ export default function ControlsPanel({
         </AnimatePresence>
       </div>
 
-      <NavigationMenu.List className="ml-auto flex shrink-0 items-center gap-1">
+      <NavigationMenu.List className="ml-auto flex shrink-0 items-center">
         {tabs.map((tab) => {
           const section = CONTROL_SECTIONS.find(
             (controlSection) => controlSection.id === tab.id,

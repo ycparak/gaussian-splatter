@@ -19,7 +19,7 @@ This file gives coding agents the project context and commands needed to work sa
 - Active overlay UI is split across `ActionPanel`, `ControlsPanel`, `ImagePanel`, `InfoPanel`, and `TopLeftActions`. The archived sidebar under `src/components/archived` is intentionally excluded from active checks.
 - Shaders live in `src/engine/shaders`, including the GPGPU particle simulation shader at `src/engine/shaders/gpgpu/particles.glsl`. Keep GLSL in that tree and import it through `vite-plugin-glsl`.
 - Bundled point-cloud assets live in `public/*.pgs.gz`. The helper script `scripts/strip-ply.ts` can strip a larger PLY file down to the fields this app uses and also writes a gzipped copy beside the stripped file.
-- The local generation server lives in `scripts/generator.ts` and is started with `bun run server`.
+- The local generation server lives in `server/generator.ts` and is started with `bun run server`.
 - Vite is configured in `vite.config.ts` with React, Tailwind CSS v4, GLSL plugins, and the virtual bundled-scenes module. The `@` alias points at `./src`, and the app is built for the root path (`base: "/"`). If you change the base or asset locations, update `src/engine/Scene.ts` and `index.html` together.
 
 ## Build and Test Commands

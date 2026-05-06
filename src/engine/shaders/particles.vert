@@ -19,7 +19,7 @@ void main() {
   vec4 modelPosition = modelMatrix * vec4(particle.xyz, 1.0);
   vec4 viewPosition = viewMatrix * modelPosition;
   float infoProgress = uInfoProgress * uInfoProgress * (3.0 - 2.0 * uInfoProgress);
-  vec2 viewportDirection = normalize((aParticlesUv - 0.5) * vec2(1.8, 1.0) + vec2(0.001));
+  vec2 viewportDirection = normalize(viewPosition.xy + vec2(0.001));
   viewPosition.xy += viewportDirection * infoProgress * infoProgress * max(-viewPosition.z, 1.0) * 9.0;
   vec4 projectedPosition = projectionMatrix * viewPosition;
   gl_Position = projectedPosition;

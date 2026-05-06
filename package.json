@@ -6,7 +6,7 @@
 	"packageManager": "bun@1.2.13",
 	"scripts": {
 		"dev": "vite",
-		"server": "bun scripts/generator.ts",
+		"server": "bun server/generator.ts",
 		"start": "bun run dev & bun run server & wait",
 		"build": "vite build",
 		"preview": "vite preview",

@@ -108,6 +108,10 @@ export default class Scene {
 		this.pointAsset?.setInfoVisible(isVisible);
 	}
 
+	isInfoTransitionActive(): boolean {
+		return this.pointAsset?.isInfoTransitionActive() ?? false;
+	}
+
 	animate(delta: number, elapsed: number): void {
 		if (this.isDisposed) return;
 		this.cameraRig.update(delta);

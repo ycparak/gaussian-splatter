@@ -46,12 +46,13 @@ void main() {
     particle.xyz += flowField * uDeltaTime * strength * uFlowFieldStrength;
     particle.xyz += (morphBase - particle.xyz) * uDeltaTime * uReturnForce * smoothstep(0.0, 0.08, uMorphProgress) * (1.0 - infoProgress);
 
-    vec3 dispersal = vec3(
+    vec3 dispersalNoise = vec3(
       simplexNoise4d(vec4(base.xyz * 0.42 + vec3(17.0), 1.0)),
       simplexNoise4d(vec4(base.xyz * 0.42 + vec3(31.0), 1.0)),
       simplexNoise4d(vec4(base.xyz * 0.42 + vec3(47.0), 1.0))
     );
-    vec3 dispersalDirection = normalize(vec3(morphBase.xy * vec2(1.4, 1.0) + dispersal.xy * 0.9, 1.0 + abs(dispersal.z)));
+    vec3 outwardDirection = normalize(vec3(morphBase.xy * vec2(1.5, 1.0), 0.35 + abs(morphBase.z) * 0.2));
+    vec3 dispersalDirection = normalize(outwardDirection + dispersalNoise * 0.22);
     particle.xyz += dispersalDirection * uDeltaTime * infoProgress * 14.0;
 
     // Decay

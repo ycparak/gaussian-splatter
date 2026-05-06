@@ -31,6 +31,7 @@ export default class Three {
 	sceneLoadCallbacks: SceneLoadCallbacks;
 	readonly clock = new THREE.Clock();
 	animationFrameId: number | null = null;
+	pausedInfoAnimationFrameId: number | null = null;
 	elapsedTime = 0;
 	isPaused = false;
 	isRecording = false;
@@ -97,7 +98,7 @@ export default class Three {
 	setInfoVisible(isVisible: boolean): void {
 		this.scene?.setInfoVisible(isVisible);
 		if (this.isPaused) {
-			this.renderStillFrame();
+			this.#startPausedInfoAnimation();
 		}
 	}
 
@@ -111,9 +112,16 @@ export default class Three {
 				cancelAnimationFrame(this.animationFrameId);
 				this.animationFrameId = null;
 			}
+			if (this.scene?.isInfoTransitionActive()) {
+				this.#startPausedInfoAnimation();
+			}
 			return;
 		}
 
+		if (this.pausedInfoAnimationFrameId !== null) {
+			cancelAnimationFrame(this.pausedInfoAnimationFrameId);
+			this.pausedInfoAnimationFrameId = null;
+		}
 		this.clock.getDelta();
 		this.#animate();
 	}
@@ -233,6 +241,10 @@ export default class Three {
 			cancelAnimationFrame(this.animationFrameId);
 			this.animationFrameId = null;
 		}
+		if (this.pausedInfoAnimationFrameId !== null) {
+			cancelAnimationFrame(this.pausedInfoAnimationFrameId);
+			this.pausedInfoAnimationFrameId = null;
+		}
 
 		this.#discardRecording();
 		this.#unsubscribeResize?.();
@@ -257,6 +269,55 @@ export default class Three {
 		this.scene.animate(delta, this.elapsedTime);
 		this.postProcessing.render();
 		this.animationFrameId = requestAnimationFrame(() => this.#animate());
+	}
+
+	#startPausedInfoAnimation(): void {
+		if (
+			this.isDisposed ||
+			!this.isPaused ||
+			!this.scene ||
+			!this.postProcessing
+		) {
+			return;
+		}
+
+		if (!this.scene.isInfoTransitionActive()) {
+			this.renderStillFrame();
+			return;
+		}
+
+		if (this.pausedInfoAnimationFrameId !== null) return;
+		this.clock.getDelta();
+		this.pausedInfoAnimationFrameId = requestAnimationFrame(() =>
+			this.#animatePausedInfoTransition(),
+		);
+	}
+
+	#animatePausedInfoTransition(): void {
+		if (this.isDisposed || !this.scene || !this.postProcessing) {
+			this.pausedInfoAnimationFrameId = null;
+			return;
+		}
+
+		if (!this.isPaused) {
+			this.pausedInfoAnimationFrameId = null;
+			return;
+		}
+
+		const delta = this.clock.getDelta();
+		this.elapsedTime += delta;
+		this.scene.animate(delta, this.elapsedTime);
+		this.postProcessing.render();
+
+		if (this.scene.isInfoTransitionActive()) {
+			this.pausedInfoAnimationFrameId = requestAnimationFrame(() =>
+				this.#animatePausedInfoTransition(),
+			);
+			return;
+		}
+
+		this.pausedInfoAnimationFrameId = null;
+		this.renderStillFrame();
 	}
 
 	#createSceneLoadCallbacks(): SceneLoadCallbacks {

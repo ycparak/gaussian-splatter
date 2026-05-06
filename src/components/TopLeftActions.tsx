@@ -48,4 +48,4 @@ export default function TopLeftActions({
 }
 
 const iconButtonClassName =
-  "flex size-9 items-center justify-center rounded-[10px] border border-white/5 bg-neutral-800/50 text-neutral-400 backdrop-blur-[10px] transition-colors hover:bg-neutral-800/60 hover:text-neutral-300 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-white/20";
+  "flex size-9 items-center justify-center rounded-[10px] border border-white/5 bg-neutral-800/50 text-neutral-400 backdrop-blur-[10px] transition-colors hover:bg-neutral-800/60 hover:text-neutral-300 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-white/20 cursor-default";

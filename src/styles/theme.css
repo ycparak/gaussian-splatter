@@ -1,26 +1,13 @@
 @theme inline {
-	--font-sans: var(--font-ui);
-	--font-heading: var(--font-display);
-	--font-mono: var(--font-mono-ui);
-
-	/* Custom */
-	--color-neutral-300: oklch(0.8853 0 0); /* #d9d9d9 */
-	--color-neutral-400: oklch(0.6862 0 0); /* #9a9a9a */
-	--color-icon-hovered: var(--icon-hovered);
+  --font-sans: var(--font-ui);
 }
 
 :root {
-	--font-ui: "Geist Variable", system-ui, sans-serif;
-	--font-display: "Geist Variable", system-ui, sans-serif;
-	--font-mono-ui:
-		ui-monospace, "SFMono-Regular", "SF Mono", Consolas, monospace;
+  --font-ui: "Geist Variable", system-ui, sans-serif;
 
-	--color-neutral-300: oklch(0.8853 0 0); /* #d9d9d9 */
-	--color-neutral-400: oklch(0.6862 0 0); /* #9a9a9a */
-	--color-neutral-600: oklch(0.5208 0 0); /* #696969 */
-	--color-neutral-700: oklch(0.4997 0 0); /* #636363 */
-	--color-neutral-800: oklch(0.3211 0 0); /* #333333 */
-
-	--icon: #808080;
-	--icon-hovered: oklch(0.8761 0 0);
+  --color-neutral-300: oklch(0.8853 0 0); /* #d9d9d9 */
+  --color-neutral-400: oklch(0.6862 0 0); /* #9a9a9a */
+  --color-neutral-600: oklch(0.5208 0 0); /* #696969 */
+  --color-neutral-700: oklch(0.4997 0 0); /* #636363 */
+  --color-neutral-800: oklch(0.3211 0 0); /* #333333 */
 }
