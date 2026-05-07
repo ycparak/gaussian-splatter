@@ -6,7 +6,6 @@ import { GithubIcon } from "@/src/components/icons/github";
 import { InfoIcon } from "@/src/components/icons/info";
 import { CloseIcon } from "@/src/components/icons/close";
 import { Button } from "@/src/components/ui/button";
-import { cn } from "@/src/lib/utils";
 
 interface TopLeftActionsProps {
   isInfoOpen: boolean;
