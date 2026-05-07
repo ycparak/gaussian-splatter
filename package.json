@@ -1,42 +1,45 @@
 {
-	"name": "particle-generator",
-	"private": true,
-	"version": "0.0.0",
-	"type": "module",
-	"packageManager": "bun@1.2.13",
-	"scripts": {
-		"dev": "vite",
-		"server": "bun server/generator.ts",
-		"start": "bun run dev & bun run server & wait",
-		"build": "vite build",
-		"preview": "vite preview",
-		"pack:pgs": "bun scripts/pack-pgs.ts",
-		"check": "biome check .",
-		"check:write": "biome check --write .",
-		"format": "biome format --write .",
-		"lint": "biome lint ."
-	},
-	"devDependencies": {
-		"@biomejs/biome": "^2.4.13",
-		"@types/node": "^25.6.0",
-		"@types/react": "^19.2.14",
-		"@types/react-dom": "^19.2.3",
-		"@types/three": "^0.184.0",
-		"@vitejs/plugin-react": "5.2.0",
-		"bun-types": "^1.3.13",
-		"tailwindcss": "^4.1.18",
-		"typescript": "^6.0.3",
-		"vite": "^7.2.4",
-		"vite-plugin-glsl": "^1.5.5"
-	},
-	"dependencies": {
-		"@base-ui/react": "^1.4.1",
-		"@fontsource-variable/geist": "^5.2.8",
-		"@tailwindcss/vite": "^4.1.18",
-		"clsx": "^2.1.1",
-		"motion": "^12.38.0",
-		"react": "^19.2.5",
-		"react-dom": "^19.2.5",
-		"three": "^0.182.0"
-	}
+  "name": "particle-generator",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "packageManager": "bun@1.2.13",
+  "scripts": {
+    "dev": "vite",
+    "server": "bun server/generator.ts",
+    "start": "bun run dev & bun run server & wait",
+    "build": "vite build",
+    "preview": "bun run build && wrangler dev",
+    "pack:pgs": "bun scripts/pack-pgs.ts",
+    "check": "biome check .",
+    "check:write": "biome check --write .",
+    "format": "biome format --write .",
+    "lint": "biome lint .",
+    "deploy": "bun run build && wrangler deploy"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.4.13",
+    "@cloudflare/vite-plugin": "^1.36.1",
+    "@types/node": "^25.6.0",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "@types/three": "^0.184.0",
+    "@vitejs/plugin-react": "5.2.0",
+    "bun-types": "^1.3.13",
+    "tailwindcss": "^4.1.18",
+    "typescript": "^6.0.3",
+    "vite": "^7.2.4",
+    "vite-plugin-glsl": "^1.5.5",
+    "wrangler": "^4.89.0"
+  },
+  "dependencies": {
+    "@base-ui/react": "^1.4.1",
+    "@fontsource-variable/geist": "^5.2.8",
+    "@tailwindcss/vite": "^4.1.18",
+    "clsx": "^2.1.1",
+    "motion": "^12.38.0",
+    "react": "^19.2.5",
+    "react-dom": "^19.2.5",
+    "three": "^0.182.0"
+  }
 }
