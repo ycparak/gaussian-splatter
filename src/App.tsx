@@ -15,7 +15,7 @@ import ActionPanel from "@/src/components/ActionPanel";
 import ControlsPanel from "@/src/components/ControlsPanel";
 import ImagePanel from "@/src/components/ImagePanel";
 import InfoPanel from "@/src/components/InfoPanel";
-import TopLeftActions from "@/src/components/TopLeftActions";
+import InfoButtons from "@/src/components/InfoButtons";
 import { defaultScene } from "@/src/engine/availableScenes";
 import { isUploadUiEnabled } from "@/src/engine/runtime";
 import {
@@ -47,7 +47,7 @@ const INITIAL_LOADER_STATE: LoaderState = defaultScene
     };
 
 const interfaceTransition = {
-  duration: 0.7,
+  duration: 0.75,
   ease: [0.23, 1, 0.32, 1],
 } as const;
 
@@ -189,10 +189,7 @@ export default function App() {
       <MotionConfig reducedMotion="user">
         <div ref={containerRef} className="fixed inset-0 overflow-hidden" />
 
-        <TopLeftActions
-          isInfoOpen={isInfoOpen}
-          onToggleInfo={handleToggleInfo}
-        />
+        <InfoButtons isInfoOpen={isInfoOpen} onToggleInfo={handleToggleInfo} />
 
         <m.div
           className="pointer-events-none fixed inset-0 z-9"
@@ -200,7 +197,10 @@ export default function App() {
           animate={{
             opacity: isInfoOpen ? 0 : 1,
           }}
-          transition={interfaceTransition}
+          transition={{
+            ...interfaceTransition,
+            delay: isInfoOpen ? 0 : 0.35,
+          }}
           aria-hidden={isInfoOpen}
           inert={isInfoOpen ? true : undefined}
         >
