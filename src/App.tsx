@@ -93,6 +93,10 @@ export default function App() {
       return nextIsInfoOpen;
     });
   }, []);
+  const handleCloseInfo = useCallback(() => {
+    setIsInfoOpen(false);
+    threeRef.current?.setInfoVisible(false);
+  }, []);
 
   const handleSceneSelect = useCallback((scene: SceneAsset) => {
     setSceneErrorMessage(null);
@@ -223,7 +227,9 @@ export default function App() {
           />
         </m.div>
 
-        <AnimatePresence>{isInfoOpen ? <InfoPanel /> : null}</AnimatePresence>
+        <AnimatePresence>
+          {isInfoOpen ? <InfoPanel onRequestClose={handleCloseInfo} /> : null}
+        </AnimatePresence>
 
         <div
           id="loader"

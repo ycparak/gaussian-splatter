@@ -2,6 +2,10 @@
 
 import { m } from "motion/react";
 
+interface InfoPanelProps {
+  onRequestClose: () => void;
+}
+
 const variants = {
   initial: {
     opacity: 0,
@@ -31,7 +35,7 @@ const variants = {
   },
 };
 
-export default function InfoPanel() {
+export default function InfoPanel({ onRequestClose }: InfoPanelProps) {
   return (
     <m.div
       key="info-panel"
@@ -39,9 +43,14 @@ export default function InfoPanel() {
       initial="initial"
       animate="animate"
       exit="exit"
+      onClick={(event) => {
+        if (event.target instanceof Element && event.target.closest("a"))
+          return;
+        onRequestClose();
+      }}
       className="pointer-events-auto fixed inset-0 z-10 flex items-center justify-center px-6 text-center will-change-transform"
     >
-      <p className="max-w-[256px] text-xs leading-4 font-semibold text-neutral-400 cursor-default">
+      <p className="max-w-[256px] text-xs leading-4 font-semibold text-neutral-400 cursor-default text-balance">
         A browser based particle generator that takes an image and outputs a
         gaussian splat using Apple's ML SHARP, Three.js &amp; GPGPU. It’s
         compressed to ~11% of the PLY size. <br />
@@ -50,7 +59,7 @@ export default function InfoPanel() {
           href="https://yusufparak.com"
           target="_blank"
           rel="noreferrer"
-          className="text-neutral-300 transition-colors hover:text-white"
+          className="text-neutral-300 transition-colors hover:text-white cursor-default"
         >
           Yusuf Parak
         </a>
