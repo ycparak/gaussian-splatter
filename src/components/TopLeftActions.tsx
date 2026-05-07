@@ -4,6 +4,7 @@ import { m } from "motion/react";
 
 import { GithubIcon } from "@/src/components/icons/github";
 import { InfoIcon } from "@/src/components/icons/info";
+import { CloseIcon } from "@/src/components/icons/close";
 import { cn } from "@/src/lib/utils";
 
 interface TopLeftActionsProps {
@@ -30,7 +31,11 @@ export default function TopLeftActions({
           isInfoOpen && "bg-neutral-800/65 text-neutral-300",
         )}
       >
-        <InfoIcon className="size-4" aria-hidden="true" />
+        {isInfoOpen ? (
+          <CloseIcon className="size-4" aria-hidden="true" />
+        ) : (
+          <InfoIcon className="size-4" aria-hidden="true" />
+        )}
       </m.button>
 
       <m.a

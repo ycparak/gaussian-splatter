@@ -41,9 +41,11 @@ export default function InfoPanel() {
       exit="exit"
       className="pointer-events-auto fixed inset-0 z-10 flex items-center justify-center px-6 text-center will-change-transform"
     >
-      <p className="max-w-[256px] text-xs leading-4 font-semibold text-neutral-400">
-        An open source, in-browser, particle generator that takes an image and
-        outputs a gaussian splat using Apple's ML SHARP. Built with love, by{" "}
+      <p className="max-w-[256px] text-xs leading-4 font-semibold text-neutral-400 cursor-default">
+        A browser based particle generator that takes an image and outputs a
+        gaussian splat using Apple's ML SHARP, Three.js &amp; GPGPU. It’s
+        compressed to ~11% of the PLY size. <br />
+        Built with love, by{" "}
         <a
           href="https://yusufparak.com"
           target="_blank"
