@@ -1,62 +1,58 @@
 @layer base {
-	*,
-	*::before,
-	*::after {
-		box-sizing: border-box;
-	}
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
 
-	* {
-		/*@apply border-border outline-ring/50;*/
-	}
+  html {
+    font-family: var(--font-sans);
+    font-weight: 600;
+    background: var(--color-black);
+    color: var(--color-neutral-400);
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    font-variant-numeric: tabular-nums;
+  }
 
-	html {
-		font-family: var(--font-sans);
-		font-weight: 600;
-		background: var(--color-black);
-		color: var(--color-neutral-400);
-		text-rendering: optimizeLegibility;
-		-webkit-font-smoothing: antialiased;
-		-moz-osx-font-smoothing: grayscale;
-		font-variant-numeric: tabular-nums;
-	}
+  body {
+    min-height: 100vh;
+    margin: 0;
+    background:
+      radial-gradient(
+        circle at top left,
+        color-mix(in oklch, var(--primary) 16%, transparent),
+        transparent 38%
+      ),
+      radial-gradient(
+        circle at bottom right,
+        color-mix(in oklch, var(--accent) 12%, transparent),
+        transparent 34%
+      ),
+      var(--background);
+    color: var(--foreground);
+    font-family: var(--font-sans);
+  }
 
-	body {
-		min-height: 100vh;
-		margin: 0;
-		background:
-			radial-gradient(
-				circle at top left,
-				color-mix(in oklch, var(--primary) 16%, transparent),
-				transparent 38%
-			),
-			radial-gradient(
-				circle at bottom right,
-				color-mix(in oklch, var(--accent) 12%, transparent),
-				transparent 34%
-			),
-			var(--background);
-		color: var(--foreground);
-		font-family: var(--font-sans);
-	}
+  ::selection {
+    background: color-mix(in oklch, var(--primary) 24%, transparent);
+    color: var(--primary-foreground);
+  }
 
-	::selection {
-		background: color-mix(in oklch, var(--primary) 24%, transparent);
-		color: var(--primary-foreground);
-	}
+  #app {
+    min-height: 100vh;
+    isolation: isolate;
+  }
 
-	#app {
-		min-height: 100vh;
-		isolation: isolate;
-	}
-
-	@media (prefers-reduced-motion: reduce) {
-		*,
-		*::before,
-		*::after {
-			animation-duration: 0.01ms;
-			animation-iteration-count: 1;
-			scroll-behavior: auto;
-			transition-duration: 0.01ms;
-		}
-	}
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms;
+      animation-iteration-count: 1;
+      scroll-behavior: auto;
+      transition-duration: 0.01ms;
+    }
+  }
 }

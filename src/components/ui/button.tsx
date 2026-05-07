@@ -1,28 +1,89 @@
 "use client";
 
-import type { ComponentPropsWithoutRef, ReactNode } from "react";
+import { Button as BaseButton } from "@base-ui/react/button";
+import type { ComponentPropsWithoutRef, ElementRef, ReactNode } from "react";
+import { forwardRef } from "react";
 
 import { cn } from "@/src/lib/utils";
 
 type ButtonVariant = "default";
 type ButtonSize = "default" | "icon";
+type BaseButtonProps = ComponentPropsWithoutRef<typeof BaseButton>;
 
-export type ButtonProps = ComponentPropsWithoutRef<"button"> & {
+export type ButtonProps = Omit<BaseButtonProps, "children"> & {
   icon?: ReactNode;
+  children?: ReactNode;
+  className?: string;
   variant?: ButtonVariant;
   size?: ButtonSize;
 };
 
-export function Button({
-  className,
-  children,
-  icon,
+export const Button = forwardRef<ElementRef<typeof BaseButton>, ButtonProps>(
+  function Button(
+    {
+      className,
+      children,
+      icon,
+      variant = "default",
+      size,
+      type = "button",
+      ...props
+    }: ButtonProps,
+    ref,
+  ) {
+    const hasLabel = children !== undefined && children !== null;
+
+    return (
+      <BaseButton
+        ref={ref}
+        type={type}
+        className={getButtonClassName({
+          variant,
+          size,
+          hasLabel,
+          className,
+        })}
+        {...props}
+      >
+        {icon ? (
+          <span
+            aria-hidden="true"
+            className="flex shrink-0 items-center justify-center text-current"
+          >
+            {icon}
+          </span>
+        ) : null}
+        {hasLabel ? <span className="truncate">{children}</span> : null}
+      </BaseButton>
+    );
+  },
+);
+
+export default Button;
+
+const variantStyles: Record<ButtonVariant, string> = {
+  default:
+    "border border-white/5 bg-neutral-800/50 text-neutral-400 hover:bg-neutral-800/75 hover:text-neutral-300 focus-visible:border-white/20",
+};
+
+const sizeStyles: Record<ButtonSize, string> = {
+  default: "h-9 px-4 py-2",
+  icon: "h-9 w-9 p-0",
+};
+
+interface ButtonClassNameOptions {
+  variant?: ButtonVariant;
+  size?: ButtonSize;
+  hasLabel?: boolean;
+  className?: string;
+}
+
+export function getButtonClassName({
   variant = "default",
   size,
-  type = "button",
-  ...props
-}: ButtonProps) {
-  const hasLabel = children !== undefined && children !== null;
+  hasLabel = true,
+  className,
+}: ButtonClassNameOptions = {}) {
   const variantClassName = variantStyles[variant];
   const sizeClassName = size
     ? sizeStyles[size]
@@ -30,38 +91,10 @@ export function Button({
       ? "h-9 gap-2 px-4"
       : "size-9 p-0";
 
-  return (
-    <button
-      type={type}
-      className={cn(
-        "inline-flex items-center justify-center whitespace-nowrap rounded-[10px] text-xs backdrop-blur-[10px] transition-colors focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
-        variantClassName,
-        sizeClassName,
-        className,
-      )}
-      {...props}
-    >
-      {icon ? (
-        <span
-          aria-hidden="true"
-          className="flex shrink-0 items-center justify-center text-current"
-        >
-          {icon}
-        </span>
-      ) : null}
-      {hasLabel ? <span className="truncate">{children}</span> : null}
-    </button>
+  return cn(
+    "inline-flex items-center justify-center whitespace-nowrap rounded-[10px] text-xs backdrop-blur-[10px] cursor-default transition transition-colors focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
+    variantClassName,
+    sizeClassName,
+    className,
   );
 }
-
-export default Button;
-
-const variantStyles: Record<ButtonVariant, string> = {
-  default:
-    "border border-white/5 bg-neutral-800/50 text-neutral-400 hover:bg-neutral-800/60 focus-visible:border-white/20",
-};
-
-const sizeStyles: Record<ButtonSize, string> = {
-  default: "h-9 px-4 py-2",
-  icon: "h-9 w-9 p-0",
-};
