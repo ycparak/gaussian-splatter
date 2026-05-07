@@ -5,6 +5,7 @@ import { m } from "motion/react";
 import { GithubIcon } from "@/src/components/icons/github";
 import { InfoIcon } from "@/src/components/icons/info";
 import { CloseIcon } from "@/src/components/icons/close";
+import { Button } from "@/src/components/ui/button";
 import { cn } from "@/src/lib/utils";
 
 interface TopLeftActionsProps {
@@ -13,44 +14,44 @@ interface TopLeftActionsProps {
 }
 
 const tapAnimation = { scale: 0.925 } as const;
+const MotionButton = m.create(Button);
 
 export default function TopLeftActions({
   isInfoOpen,
   onToggleInfo,
 }: TopLeftActionsProps) {
+  const openGithubRepository = () => {
+    window.open(
+      "https://github.com/ycparak/gaussian-splatter",
+      "_blank",
+      "noopener,noreferrer",
+    );
+  };
+
   return (
     <div className="fixed top-5 left-5 z-20 flex items-center gap-1">
-      <m.button
-        type="button"
+      <MotionButton
         aria-label={isInfoOpen ? "Hide info" : "Show info"}
         aria-pressed={isInfoOpen}
         whileTap={tapAnimation}
         onClick={onToggleInfo}
-        className={cn(
-          iconButtonClassName,
-          isInfoOpen && "bg-neutral-800/65 text-neutral-300",
-        )}
+        size="icon"
       >
         {isInfoOpen ? (
           <CloseIcon className="size-4" aria-hidden="true" />
         ) : (
           <InfoIcon className="size-4" aria-hidden="true" />
         )}
-      </m.button>
+      </MotionButton>
 
-      <m.a
-        href="https://github.com/ycparak/gaussian-splatter"
-        target="_blank"
-        rel="noreferrer"
+      <MotionButton
         aria-label="Open GitHub repository"
         whileTap={tapAnimation}
-        className={iconButtonClassName}
+        onClick={openGithubRepository}
+        size="icon"
       >
         <GithubIcon className="size-4" aria-hidden="true" />
-      </m.a>
+      </MotionButton>
     </div>
   );
 }
-
-const iconButtonClassName =
-  "flex size-9 items-center justify-center rounded-[10px] border border-white/5 bg-neutral-800/50 text-neutral-400 backdrop-blur-[10px] transition-colors hover:bg-neutral-800/60 hover:text-neutral-300 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-white/20 cursor-default";

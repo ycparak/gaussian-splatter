@@ -4,8 +4,8 @@ import type { ComponentPropsWithoutRef, ReactNode } from "react";
 
 import { cn } from "@/src/lib/utils";
 
-type ButtonVariant = "default" | "ghost" | "secondary";
-type ButtonSize = "default" | "sm" | "xs" | "icon-xs" | "icon-sm";
+type ButtonVariant = "default";
+type ButtonSize = "default" | "icon";
 
 export type ButtonProps = ComponentPropsWithoutRef<"button"> & {
   icon?: ReactNode;
@@ -34,7 +34,7 @@ export function Button({
     <button
       type={type}
       className={cn(
-        "inline-flex items-center justify-center whitespace-nowrap rounded-[10px] text-xs backdrop-blur-[10px] transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
+        "inline-flex items-center justify-center whitespace-nowrap rounded-[10px] text-xs backdrop-blur-[10px] transition-colors focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
         variantClassName,
         sizeClassName,
         className,
@@ -58,17 +58,10 @@ export default Button;
 
 const variantStyles: Record<ButtonVariant, string> = {
   default:
-    "border border-white/5 bg-neutral-800/50 text-neutral-400 hover:bg-neutral-800/60",
-  ghost:
-    "border border-transparent bg-transparent text-neutral-400 hover:bg-neutral-800/50 hover:text-neutral-300",
-  secondary:
-    "border border-white/5 bg-neutral-800/50 text-neutral-400 hover:bg-neutral-800/60 hover:text-neutral-300",
+    "border border-white/5 bg-neutral-800/50 text-neutral-400 hover:bg-neutral-800/60 focus-visible:border-white/20",
 };
 
 const sizeStyles: Record<ButtonSize, string> = {
   default: "h-9 px-4 py-2",
-  sm: "h-8 gap-2 rounded-md px-3",
-  xs: "h-7 gap-2 rounded-md px-2.5 text-[11px]",
-  "icon-xs": "size-7 p-0",
-  "icon-sm": "size-8 p-0",
+  icon: "h-9 w-9 p-0",
 };
