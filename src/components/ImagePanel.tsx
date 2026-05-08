@@ -27,7 +27,7 @@ import {
 	fetchGenerationJob,
 	resolveCompletedScene,
 	statusMessage,
-} from '@/src/generatedSceneApi'
+} from '@/src/lib/generatedSceneApi'
 import { cn } from '@/src/lib/utils'
 
 const bundledPlyPercentById: Record<string, 11 | 12 | 13> = {
