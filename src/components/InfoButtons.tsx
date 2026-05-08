@@ -11,8 +11,12 @@ interface TopLeftActionsProps {
 	onToggleInfo: () => void;
 }
 
-const tapAnimation = { scale: 0.925 } as const;
-const MotionButton = m.create(Button);
+const buttonScaleTransition = {
+	type: "spring",
+	stiffness: 420,
+	damping: 28,
+	mass: 0.9,
+} as const;
 
 export default function TopLeftActions({
 	isInfoOpen,
@@ -20,10 +24,9 @@ export default function TopLeftActions({
 }: TopLeftActionsProps) {
 	return (
 		<div className="fixed top-5 left-5 z-20 flex items-center gap-1">
-			<MotionButton
+			<Button
 				aria-label={isInfoOpen ? "Hide info" : "Show info"}
 				aria-pressed={isInfoOpen}
-				whileTap={tapAnimation}
 				onClick={onToggleInfo}
 				size="icon"
 				icon={
@@ -40,7 +43,9 @@ export default function TopLeftActions({
 				target="_blank"
 				rel="noopener noreferrer"
 				aria-label="Open GitHub repository"
-				whileTap={tapAnimation}
+				whileHover={{ scale: 1.04 }}
+				whileTap={{ scale: 0.94 }}
+				transition={buttonScaleTransition}
 				className={getButtonClassName({ size: "icon", hasLabel: false })}
 			>
 				<GithubIcon className="size-4" aria-hidden="true" />

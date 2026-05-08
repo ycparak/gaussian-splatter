@@ -247,13 +247,6 @@ export default function App() {
                 style={{ width: `${Math.round(loaderState.progress * 100)}%` }}
               />
             </div>
-            {loaderState.message ? (
-              <p className="max-w-56 text-center text-[11px] text-white/70">
-                {loaderState.phase === "error"
-                  ? `Load failed: ${loaderState.message}`
-                  : loaderState.message}
-              </p>
-            ) : null}
           </div>
         </div>
       </MotionConfig>
