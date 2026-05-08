@@ -1,136 +1,136 @@
-import type { SceneSettings, ToneMappingMode } from "@/shared/types";
+import type { SceneSettings, ToneMappingMode } from '@/shared/types'
 
-export type SettingsGroup = keyof SceneSettings;
+export type SettingsGroup = keyof SceneSettings
 
 export interface SelectOption<T extends string> {
-	label: string;
-	value: T;
+	label: string
+	value: T
 }
 
 export type ControlDefinition =
 	| {
-			kind: "slider";
-			label: string;
-			group: SettingsGroup;
-			settingKey: string;
-			min: number;
-			max: number;
-			step: number;
-			digits: number;
+			kind: 'slider'
+			label: string
+			group: SettingsGroup
+			settingKey: string
+			min: number
+			max: number
+			step: number
+			digits: number
 	  }
 	| {
-			kind: "toggle";
-			label: string;
-			group: SettingsGroup;
-			settingKey: string;
+			kind: 'toggle'
+			label: string
+			group: SettingsGroup
+			settingKey: string
 	  }
 	| {
-			kind: "color";
-			label: string;
-			group: SettingsGroup;
-			settingKey: string;
+			kind: 'color'
+			label: string
+			group: SettingsGroup
+			settingKey: string
 	  }
 	| {
-			kind: "select";
-			label: string;
-			group: SettingsGroup;
-			settingKey: string;
-			options: SelectOption<ToneMappingMode>[];
-	  };
+			kind: 'select'
+			label: string
+			group: SettingsGroup
+			settingKey: string
+			options: SelectOption<ToneMappingMode>[]
+	  }
 
 export interface ControlSectionDefinition {
-	id: SettingsGroup;
-	title: string;
-	controls: ControlDefinition[];
+	id: SettingsGroup
+	title: string
+	controls: ControlDefinition[]
 }
 
 const TONE_MAPPING_OPTIONS: SelectOption<ToneMappingMode>[] = [
-	{ label: "ACES Filmic", value: "aces" },
-	{ label: "Linear", value: "linear" },
-	{ label: "Reinhard", value: "reinhard" },
-	{ label: "None", value: "none" },
-];
+	{ label: 'ACES Filmic', value: 'aces' },
+	{ label: 'Linear', value: 'linear' },
+	{ label: 'Reinhard', value: 'reinhard' },
+	{ label: 'None', value: 'none' },
+]
 
 export const CONTROL_SECTIONS: ControlSectionDefinition[] = [
 	{
-		id: "particles",
-		title: "Particles",
+		id: 'particles',
+		title: 'Particles',
 		controls: [
 			{
-				kind: "slider",
-				label: "Size",
-				group: "particles",
-				settingKey: "size",
+				kind: 'slider',
+				label: 'Size',
+				group: 'particles',
+				settingKey: 'size',
 				min: 0.005,
 				max: 0.12,
 				step: 0.001,
 				digits: 3,
 			},
 			{
-				kind: "slider",
-				label: "Flow Influence",
-				group: "particles",
-				settingKey: "flowFieldInfluence",
+				kind: 'slider',
+				label: 'Flow Influence',
+				group: 'particles',
+				settingKey: 'flowFieldInfluence',
 				min: 0,
 				max: 1,
 				step: 0.01,
 				digits: 2,
 			},
 			{
-				kind: "slider",
-				label: "Flow Strength",
-				group: "particles",
-				settingKey: "flowFieldStrength",
+				kind: 'slider',
+				label: 'Flow Strength',
+				group: 'particles',
+				settingKey: 'flowFieldStrength',
 				min: 0,
 				max: 4,
 				step: 0.05,
 				digits: 2,
 			},
 			{
-				kind: "slider",
-				label: "Flow Frequency",
-				group: "particles",
-				settingKey: "flowFieldFrequency",
+				kind: 'slider',
+				label: 'Flow Frequency',
+				group: 'particles',
+				settingKey: 'flowFieldFrequency',
 				min: 0.05,
 				max: 3,
 				step: 0.05,
 				digits: 2,
 			},
 			{
-				kind: "slider",
-				label: "Time Scale",
-				group: "particles",
-				settingKey: "timeScale",
+				kind: 'slider',
+				label: 'Time Scale',
+				group: 'particles',
+				settingKey: 'timeScale',
 				min: 0,
 				max: 1,
 				step: 0.01,
 				digits: 2,
 			},
 			{
-				kind: "slider",
-				label: "Decay Rate",
-				group: "particles",
-				settingKey: "decayRate",
+				kind: 'slider',
+				label: 'Decay Rate',
+				group: 'particles',
+				settingKey: 'decayRate',
 				min: 0.1,
 				max: 3,
 				step: 0.05,
 				digits: 2,
 			},
 			{
-				kind: "slider",
-				label: "Return Force",
-				group: "particles",
-				settingKey: "returnForce",
+				kind: 'slider',
+				label: 'Return Force',
+				group: 'particles',
+				settingKey: 'returnForce',
 				min: 0,
 				max: 14,
 				step: 0.1,
 				digits: 1,
 			},
 			{
-				kind: "slider",
-				label: "Morph Duration",
-				group: "particles",
-				settingKey: "morphDuration",
+				kind: 'slider',
+				label: 'Morph Duration',
+				group: 'particles',
+				settingKey: 'morphDuration',
 				min: 0.15,
 				max: 4,
 				step: 0.05,
@@ -139,62 +139,62 @@ export const CONTROL_SECTIONS: ControlSectionDefinition[] = [
 		],
 	},
 	{
-		id: "scene",
-		title: "Scene",
+		id: 'scene',
+		title: 'Scene',
 		controls: [
 			{
-				kind: "color",
-				label: "Background",
-				group: "scene",
-				settingKey: "background",
+				kind: 'color',
+				label: 'Background',
+				group: 'scene',
+				settingKey: 'background',
 			},
 			{
-				kind: "toggle",
-				label: "Fog",
-				group: "scene",
-				settingKey: "fogEnabled",
+				kind: 'toggle',
+				label: 'Fog',
+				group: 'scene',
+				settingKey: 'fogEnabled',
 			},
 			{
-				kind: "color",
-				label: "Fog Color",
-				group: "scene",
-				settingKey: "fogColor",
+				kind: 'color',
+				label: 'Fog Color',
+				group: 'scene',
+				settingKey: 'fogColor',
 			},
 			{
-				kind: "slider",
-				label: "Fog Near",
-				group: "scene",
-				settingKey: "fogNear",
+				kind: 'slider',
+				label: 'Fog Near',
+				group: 'scene',
+				settingKey: 'fogNear',
 				min: 0,
 				max: 100,
 				step: 0.5,
 				digits: 1,
 			},
 			{
-				kind: "slider",
-				label: "Fog Far",
-				group: "scene",
-				settingKey: "fogFar",
+				kind: 'slider',
+				label: 'Fog Far',
+				group: 'scene',
+				settingKey: 'fogFar',
 				min: 1,
 				max: 120,
 				step: 0.5,
 				digits: 1,
 			},
 			{
-				kind: "slider",
-				label: "Rotation X",
-				group: "scene",
-				settingKey: "pointRotationX",
+				kind: 'slider',
+				label: 'Rotation X',
+				group: 'scene',
+				settingKey: 'pointRotationX',
 				min: 0,
 				max: Math.PI * 2,
 				step: 0.01,
 				digits: 2,
 			},
 			{
-				kind: "slider",
-				label: "Scale",
-				group: "scene",
-				settingKey: "scale",
+				kind: 'slider',
+				label: 'Scale',
+				group: 'scene',
+				settingKey: 'scale',
 				min: 0.2,
 				max: 3,
 				step: 0.01,
@@ -203,74 +203,74 @@ export const CONTROL_SECTIONS: ControlSectionDefinition[] = [
 		],
 	},
 	{
-		id: "lighting",
-		title: "Lighting",
+		id: 'lighting',
+		title: 'Lighting',
 		controls: [
 			{
-				kind: "slider",
-				label: "Direction X",
-				group: "lighting",
-				settingKey: "directionX",
+				kind: 'slider',
+				label: 'Direction X',
+				group: 'lighting',
+				settingKey: 'directionX',
 				min: -2,
 				max: 2,
 				step: 0.05,
 				digits: 2,
 			},
 			{
-				kind: "slider",
-				label: "Direction Y",
-				group: "lighting",
-				settingKey: "directionY",
+				kind: 'slider',
+				label: 'Direction Y',
+				group: 'lighting',
+				settingKey: 'directionY',
 				min: -2,
 				max: 2,
 				step: 0.05,
 				digits: 2,
 			},
 			{
-				kind: "slider",
-				label: "Direction Z",
-				group: "lighting",
-				settingKey: "directionZ",
+				kind: 'slider',
+				label: 'Direction Z',
+				group: 'lighting',
+				settingKey: 'directionZ',
 				min: -2,
 				max: 2,
 				step: 0.05,
 				digits: 2,
 			},
 			{
-				kind: "slider",
-				label: "Ambient",
-				group: "lighting",
-				settingKey: "ambient",
+				kind: 'slider',
+				label: 'Ambient',
+				group: 'lighting',
+				settingKey: 'ambient',
 				min: 0,
 				max: 2,
 				step: 0.05,
 				digits: 2,
 			},
 			{
-				kind: "slider",
-				label: "Diffuse",
-				group: "lighting",
-				settingKey: "diffuse",
+				kind: 'slider',
+				label: 'Diffuse',
+				group: 'lighting',
+				settingKey: 'diffuse',
 				min: 0,
 				max: 2,
 				step: 0.05,
 				digits: 2,
 			},
 			{
-				kind: "slider",
-				label: "Specular",
-				group: "lighting",
-				settingKey: "specular",
+				kind: 'slider',
+				label: 'Specular',
+				group: 'lighting',
+				settingKey: 'specular',
 				min: 0,
 				max: 1,
 				step: 0.01,
 				digits: 2,
 			},
 			{
-				kind: "slider",
-				label: "Shininess",
-				group: "lighting",
-				settingKey: "shininess",
+				kind: 'slider',
+				label: 'Shininess',
+				group: 'lighting',
+				settingKey: 'shininess',
 				min: 1,
 				max: 128,
 				step: 1,
@@ -279,40 +279,40 @@ export const CONTROL_SECTIONS: ControlSectionDefinition[] = [
 		],
 	},
 	{
-		id: "bloom",
-		title: "Bloom",
+		id: 'bloom',
+		title: 'Bloom',
 		controls: [
 			{
-				kind: "toggle",
-				label: "Enabled",
-				group: "bloom",
-				settingKey: "enabled",
+				kind: 'toggle',
+				label: 'Enabled',
+				group: 'bloom',
+				settingKey: 'enabled',
 			},
 			{
-				kind: "slider",
-				label: "Strength",
-				group: "bloom",
-				settingKey: "strength",
+				kind: 'slider',
+				label: 'Strength',
+				group: 'bloom',
+				settingKey: 'strength',
 				min: 0,
 				max: 2.5,
 				step: 0.05,
 				digits: 2,
 			},
 			{
-				kind: "slider",
-				label: "Radius",
-				group: "bloom",
-				settingKey: "radius",
+				kind: 'slider',
+				label: 'Radius',
+				group: 'bloom',
+				settingKey: 'radius',
 				min: 0,
 				max: 1,
 				step: 0.01,
 				digits: 2,
 			},
 			{
-				kind: "slider",
-				label: "Threshold",
-				group: "bloom",
-				settingKey: "threshold",
+				kind: 'slider',
+				label: 'Threshold',
+				group: 'bloom',
+				settingKey: 'threshold',
 				min: 0,
 				max: 1,
 				step: 0.01,
@@ -321,45 +321,45 @@ export const CONTROL_SECTIONS: ControlSectionDefinition[] = [
 		],
 	},
 	{
-		id: "color",
-		title: "Color Adjust",
+		id: 'color',
+		title: 'Color Adjust',
 		controls: [
 			{
-				kind: "slider",
-				label: "Brightness",
-				group: "color",
-				settingKey: "brightness",
+				kind: 'slider',
+				label: 'Brightness',
+				group: 'color',
+				settingKey: 'brightness',
 				min: -0.75,
 				max: 0.75,
 				step: 0.01,
 				digits: 2,
 			},
 			{
-				kind: "slider",
-				label: "Contrast",
-				group: "color",
-				settingKey: "contrast",
+				kind: 'slider',
+				label: 'Contrast',
+				group: 'color',
+				settingKey: 'contrast',
 				min: 0.1,
 				max: 2,
 				step: 0.01,
 				digits: 2,
 			},
 			{
-				kind: "slider",
-				label: "Saturation",
-				group: "color",
-				settingKey: "saturation",
+				kind: 'slider',
+				label: 'Saturation',
+				group: 'color',
+				settingKey: 'saturation',
 				min: 0,
 				max: 2.5,
 				step: 0.01,
 				digits: 2,
 			},
-			{ kind: "color", label: "Tint", group: "color", settingKey: "tintColor" },
+			{ kind: 'color', label: 'Tint', group: 'color', settingKey: 'tintColor' },
 			{
-				kind: "slider",
-				label: "Tint Strength",
-				group: "color",
-				settingKey: "tintStrength",
+				kind: 'slider',
+				label: 'Tint Strength',
+				group: 'color',
+				settingKey: 'tintStrength',
 				min: 0,
 				max: 1,
 				step: 0.01,
@@ -368,94 +368,94 @@ export const CONTROL_SECTIONS: ControlSectionDefinition[] = [
 		],
 	},
 	{
-		id: "camera",
-		title: "Camera",
+		id: 'camera',
+		title: 'Camera',
 		controls: [
 			{
-				kind: "slider",
-				label: "FOV",
-				group: "camera",
-				settingKey: "fov",
+				kind: 'slider',
+				label: 'FOV',
+				group: 'camera',
+				settingKey: 'fov',
 				min: 15,
 				max: 90,
 				step: 1,
 				digits: 0,
 			},
 			{
-				kind: "slider",
-				label: "Z Position",
-				group: "camera",
-				settingKey: "z",
+				kind: 'slider',
+				label: 'Z Position',
+				group: 'camera',
+				settingKey: 'z',
 				min: 0.5,
 				max: 10,
 				step: 0.05,
 				digits: 2,
 			},
 			{
-				kind: "slider",
-				label: "Target X",
-				group: "camera",
-				settingKey: "targetX",
+				kind: 'slider',
+				label: 'Target X',
+				group: 'camera',
+				settingKey: 'targetX',
 				min: -10,
 				max: 10,
 				step: 0.05,
 				digits: 2,
 			},
 			{
-				kind: "slider",
-				label: "Target Y",
-				group: "camera",
-				settingKey: "targetY",
+				kind: 'slider',
+				label: 'Target Y',
+				group: 'camera',
+				settingKey: 'targetY',
 				min: -10,
 				max: 10,
 				step: 0.05,
 				digits: 2,
 			},
 			{
-				kind: "slider",
-				label: "Target Z",
-				group: "camera",
-				settingKey: "targetZ",
+				kind: 'slider',
+				label: 'Target Z',
+				group: 'camera',
+				settingKey: 'targetZ',
 				min: -15,
 				max: 5,
 				step: 0.05,
 				digits: 2,
 			},
 			{
-				kind: "slider",
-				label: "Damping",
-				group: "camera",
-				settingKey: "damping",
+				kind: 'slider',
+				label: 'Damping',
+				group: 'camera',
+				settingKey: 'damping',
 				min: 0.25,
 				max: 8,
 				step: 0.05,
 				digits: 2,
 			},
 			{
-				kind: "slider",
-				label: "Bob Amount",
-				group: "camera",
-				settingKey: "bobAmplitude",
+				kind: 'slider',
+				label: 'Bob Amount',
+				group: 'camera',
+				settingKey: 'bobAmplitude',
 				min: 0,
 				max: 3,
 				step: 0.05,
 				digits: 2,
 			},
 			{
-				kind: "slider",
-				label: "Bob Speed",
-				group: "camera",
-				settingKey: "bobSpeed",
+				kind: 'slider',
+				label: 'Bob Speed',
+				group: 'camera',
+				settingKey: 'bobSpeed',
 				min: 0,
 				max: 3,
 				step: 0.05,
 				digits: 2,
 			},
 			{
-				kind: "slider",
-				label: "Roll Amount",
-				group: "camera",
-				settingKey: "rollAmplitude",
+				kind: 'slider',
+				label: 'Roll Amount',
+				group: 'camera',
+				settingKey: 'rollAmplitude',
 				min: 0,
 				max: 0.5,
 				step: 0.01,
@@ -464,31 +464,31 @@ export const CONTROL_SECTIONS: ControlSectionDefinition[] = [
 		],
 	},
 	{
-		id: "renderer",
-		title: "Renderer",
+		id: 'renderer',
+		title: 'Renderer',
 		controls: [
 			{
-				kind: "slider",
-				label: "Pixel Ratio Cap",
-				group: "renderer",
-				settingKey: "pixelRatioCap",
+				kind: 'slider',
+				label: 'Pixel Ratio Cap',
+				group: 'renderer',
+				settingKey: 'pixelRatioCap',
 				min: 0.5,
 				max: 3,
 				step: 0.25,
 				digits: 2,
 			},
 			{
-				kind: "select",
-				label: "Tone Mapping",
-				group: "renderer",
-				settingKey: "toneMapping",
+				kind: 'select',
+				label: 'Tone Mapping',
+				group: 'renderer',
+				settingKey: 'toneMapping',
 				options: TONE_MAPPING_OPTIONS,
 			},
 			{
-				kind: "slider",
-				label: "Exposure",
-				group: "renderer",
-				settingKey: "exposure",
+				kind: 'slider',
+				label: 'Exposure',
+				group: 'renderer',
+				settingKey: 'exposure',
 				min: 0.1,
 				max: 3,
 				step: 0.05,
@@ -496,4 +496,4 @@ export const CONTROL_SECTIONS: ControlSectionDefinition[] = [
 			},
 		],
 	},
-];
+]
