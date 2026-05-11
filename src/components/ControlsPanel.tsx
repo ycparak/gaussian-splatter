@@ -1,7 +1,8 @@
 'use client'
 
 import { AnimatePresence, m } from 'motion/react'
-import type { FocusEvent, MouseEvent, ReactNode } from 'react'
+import { cloneElement, isValidElement } from 'react'
+import type { FocusEvent, MouseEvent, ReactElement, ReactNode } from 'react'
 import { useCallback, useState } from 'react'
 
 import { BloomIcon } from '@/src/components/icons/bloom'
@@ -190,30 +191,43 @@ export default function ControlsPanel() {
 			</div>
 
 			<div className='ml-auto flex shrink-0 items-center'>
-				{visibleTabs.map(tab => (
-					<m.button
-						key={tab.id}
-						type='button'
-						aria-label={tab.label}
-						data-controls-trigger={tab.id}
-						onFocus={handleTriggerFocus}
-						onMouseEnter={handleTriggerMouseEnter}
-						style={triggerStyle}
-						className={cn(
-							'relative flex size-7.5 items-center justify-center text-neutral-400 outline-none transition-colors focus-visible:ring-0',
-							activeTab === tab.id && 'text-neutral-200'
-						)}>
-						{activeTab === tab.id ? (
-							<m.span
-								layoutId='controls-bubble'
-								className='absolute inset-0 bg-white/10'
-								style={triggerStyle}
-								transition={islandTransition}
-							/>
-						) : null}
-						<span className='relative z-10'>{tab.icon}</span>
-					</m.button>
-				))}
+				{visibleTabs.map(tab => {
+					const isActive = activeTab === tab.id
+					const iconClassName = cn(
+						'transition-colors duration-300',
+						isActive ? 'text-neutral-200' : 'text-neutral-400'
+					)
+					const icon = isValidElement(tab.icon)
+						? cloneElement(tab.icon as ReactElement<{ className?: string }>, {
+								className: cn(
+									(tab.icon as ReactElement<{ className?: string }>).props.className,
+									iconClassName
+								),
+							})
+						: tab.icon
+
+					return (
+						<m.button
+							key={tab.id}
+							type='button'
+							aria-label={tab.label}
+							data-controls-trigger={tab.id}
+							onFocus={handleTriggerFocus}
+							onMouseEnter={handleTriggerMouseEnter}
+							style={triggerStyle}
+							className='relative flex size-7.5 items-center justify-center outline-none focus-visible:ring-0'>
+							{isActive ? (
+								<m.span
+									layoutId='controls-bubble'
+									className='absolute inset-0 bg-white/10'
+									style={triggerStyle}
+									transition={islandTransition}
+								/>
+							) : null}
+							<span className='relative z-10'>{icon}</span>
+						</m.button>
+					)
+				})}
 			</div>
 		</nav>
 	)

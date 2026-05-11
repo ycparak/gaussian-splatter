@@ -177,7 +177,7 @@ export default function ActionPanel({
 				{tabs.map(tab => {
 					const isActive = displayTab === tab.id
 					const iconClassName = cn(
-						'transition-colors duration-300',
+						'transition-colors duration-100',
 						isActive ? 'text-neutral-300' : 'text-neutral-400',
 						isRecording && tab.id === 'record' && 'text-red-500'
 					)
