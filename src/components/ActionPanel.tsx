@@ -1,7 +1,8 @@
 'use client'
 
 import { AnimatePresence, m } from 'motion/react'
-import type { ReactNode } from 'react'
+import { cloneElement, isValidElement } from 'react'
+import type { ReactElement, ReactNode } from 'react'
 import { useState } from 'react'
 
 import { DownloadIcon } from '@/src/components/icons/download'
@@ -173,40 +174,53 @@ export default function ActionPanel({
 			</div>
 
 			<div className='ml-auto flex shrink-0 items-center'>
-				{tabs.map(tab => (
-					<m.button
-						key={tab.id}
-						type='button'
-						data-action-panel-tab={tab.id}
-						aria-label={tab.label}
-						aria-pressed={
-							tab.id === 'pause' ? isPaused : tab.id === 'record' ? isRecording : undefined
-						}
-						disabled={tab.disabled}
-						onMouseEnter={() => setActiveTab(tab.id)}
-						onFocus={() => setActiveTab(tab.id)}
-						onClick={tab.onClick}
-						whileTap={{ scale: 0.925 }}
-						style={{
-							borderRadius: '7px',
-							WebkitTapHighlightColor: 'transparent',
-						}}
-						className={cn(
-							'relative flex size-7.5 items-center justify-center text-neutral-400 outline-none transition-colors focus-visible:ring-0',
-							displayTab === tab.id && 'text-neutral-300',
-							isRecording && tab.id === 'record' && 'text-red-500'
-						)}>
-						{displayTab === tab.id ? (
-							<m.span
-								layoutId='bubble'
-								className='absolute inset-0 bg-white/10'
-								style={{ borderRadius: '7px' }}
-								transition={islandTransition}
-							/>
-						) : null}
-						<span className='relative z-10'>{tab.icon}</span>
-					</m.button>
-				))}
+				{tabs.map(tab => {
+					const isActive = displayTab === tab.id
+					const iconClassName = cn(
+						'transition-colors duration-300',
+						isActive ? 'text-neutral-300' : 'text-neutral-400',
+						isRecording && tab.id === 'record' && 'text-red-500'
+					)
+					const icon = isValidElement(tab.icon)
+						? cloneElement(tab.icon as ReactElement<{ className?: string }>, {
+								className: cn(
+									(tab.icon as ReactElement<{ className?: string }>).props.className,
+									iconClassName
+								),
+							})
+						: tab.icon
+
+					return (
+						<m.button
+							key={tab.id}
+							type='button'
+							data-action-panel-tab={tab.id}
+							aria-label={tab.label}
+							aria-pressed={
+								tab.id === 'pause' ? isPaused : tab.id === 'record' ? isRecording : undefined
+							}
+							disabled={tab.disabled}
+							onMouseEnter={() => setActiveTab(tab.id)}
+							onFocus={() => setActiveTab(tab.id)}
+							onClick={tab.onClick}
+							whileTap={{ scale: 0.925 }}
+							style={{
+								borderRadius: '7px',
+								WebkitTapHighlightColor: 'transparent',
+							}}
+							className='relative flex size-7.5 items-center justify-center outline-none focus-visible:ring-0'>
+							{isActive ? (
+								<m.span
+									layoutId='bubble'
+									className='absolute inset-0 bg-white/10'
+									style={{ borderRadius: '7px' }}
+									transition={islandTransition}
+								/>
+							) : null}
+							<span className='relative z-10'>{icon}</span>
+						</m.button>
+					)
+				})}
 			</div>
 		</m.div>
 	)
