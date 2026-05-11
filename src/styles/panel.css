@@ -6,6 +6,10 @@
 		transform 240ms ease;
 }
 
+.controls-panel-content[data-motion-content] {
+	transition: none;
+}
+
 .controls-panel-content-horizontal-left[data-starting-style] {
 	opacity: 0;
 	transform: translateX(-28px);
