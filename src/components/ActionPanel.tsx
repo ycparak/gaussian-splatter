@@ -63,7 +63,7 @@ export default function ActionPanel({
 			id: 'record',
 			label: isRecording ? 'Stop recording' : 'Record',
 			width: 201,
-			icon: <RecordIcon className='size-4' />,
+			icon: <RecordIcon className='size-4' isRecording={isRecording} />,
 			onClick: onToggleRecording,
 		},
 		{
