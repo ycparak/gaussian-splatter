@@ -3,8 +3,9 @@
 import '../styles/panel.css'
 import { AnimatePresence, m } from 'motion/react'
 import { cloneElement, isValidElement, useCallback, useEffect, useRef, useState } from 'react'
-import type { ReactElement, ReactNode } from 'react'
+import type { Dispatch, ReactElement, ReactNode, SetStateAction } from 'react'
 
+import type { SceneSettings } from '@/shared/types'
 import { BloomIcon } from '@/src/components/icons/bloom'
 import { CameraIcon } from '@/src/components/icons/camera'
 import { ColorIcon } from '@/src/components/icons/color'
@@ -17,7 +18,11 @@ import SelectControl from '@/src/components/ui/select-control'
 import Slider from '@/src/components/ui/slider'
 import Toggle from '@/src/components/ui/toggle'
 
-import { CONTROL_SECTIONS, type SettingsGroup } from '@/src/lib/sceneControlsConfig'
+import {
+	CONTROL_SECTIONS,
+	type ControlDefinition,
+	type SettingsGroup,
+} from '@/src/lib/sceneControlsConfig'
 import { cn } from '@/src/lib/utils'
 
 type TabId = SettingsGroup
@@ -26,6 +31,11 @@ interface Tab {
 	id: TabId
 	label: string
 	icon: ReactNode
+}
+
+interface ControlsPanelProps {
+	settings: SceneSettings
+	onSettingsChange: Dispatch<SetStateAction<SceneSettings>>
 }
 
 const tabs: Tab[] = [
@@ -127,8 +137,6 @@ const contentTransition = {
 	ease: 'easeOut',
 } as const
 
-const dummyBlendModeOptions = ['normal', 'screen', 'additive', 'multiply']
-
 const availableSectionIds = new Set(CONTROL_SECTIONS.map(section => section.id))
 const visibleTabs = tabs.filter(tab => availableSectionIds.has(tab.id))
 const tabsById = new Map(tabs.map(tab => [tab.id, tab] as const))
@@ -186,20 +194,19 @@ function getContentExitX(activationDirection: 'left' | 'right' | null) {
 	return 0
 }
 
-export default function ControlsPanel() {
+export default function ControlsPanel({ settings, onSettingsChange }: ControlsPanelProps) {
 	const [activeTab, setActiveTab] = useState<TabId | null>(null)
 	const [previousActiveTab, setPreviousActiveTab] = useState<TabId | null>(null)
-	const [dummySliderValue, setDummySliderValue] = useState(6)
-	const [dummyColorValue, setDummyColorValue] = useState('#ff7a00')
-	const [dummyGlowEnabled, setDummyGlowEnabled] = useState(true)
-	const [dummyBlendMode, setDummyBlendMode] = useState('normal')
 	const rootRef = useRef<HTMLElement | null>(null)
 	const popupRef = useRef<HTMLDivElement | null>(null)
 	const isColorPickerActiveRef = useRef(false)
 	const activeTabConfig = (activeTab && tabsById.get(activeTab)) ?? fallbackTab
+	const activeSection = activeTab
+		? CONTROL_SECTIONS.find(section => section.id === activeTab)
+		: undefined
 	const activationDirection = getActivationDirection(previousActiveTab, activeTab)
 	const activeContentClassName = cn(
-		'controls-panel-content absolute inset-0 flex h-full w-full items-center justify-center',
+		'controls-panel-content absolute inset-0 h-full w-full',
 		getContentMotionClass(activationDirection)
 	)
 	const activeContentInitialX = getContentInitialX(activationDirection)
@@ -222,15 +229,25 @@ export default function ControlsPanel() {
 		setActiveTab(null)
 	}, [])
 
-	const handleColorPickerActiveChange = useCallback(
-		(active: boolean) => {
-			isColorPickerActiveRef.current = active
+	const handleColorPickerActiveChange = useCallback((active: boolean) => {
+		isColorPickerActiveRef.current = active
+	}, [])
 
-			if (active) {
-				openTab('particles')
-			}
+	const updateSetting = useCallback(
+		<TGroup extends keyof SceneSettings, TKey extends keyof SceneSettings[TGroup]>(
+			group: TGroup,
+			key: TKey,
+			value: SceneSettings[TGroup][TKey]
+		) => {
+			onSettingsChange(currentSettings => ({
+				...currentSettings,
+				[group]: {
+					...currentSettings[group],
+					[key]: value,
+				},
+			}))
 		},
-		[openTab]
+		[onSettingsChange]
 	)
 
 	useEffect(() => {
@@ -356,7 +373,7 @@ export default function ControlsPanel() {
 						animate={{ opacity: 1, y: 0 }}
 						exit={{ opacity: 0, y: 8 }}
 						transition={contentTransition}
-						className='pointer-events-auto fixed bottom-16 left-5 z-10 h-120 w-75.5 overflow-hidden rounded-[10px] border border-white/10 bg-neutral-900/65 backdrop-blur-[10px]'>
+						className='pointer-events-auto fixed bottom-16 left-5 z-10 h-108.5 w-75.5 overflow-hidden rounded-[10px] border border-white/10 bg-neutral-900/65 backdrop-blur-[10px]'>
 						<AnimatePresence initial={false} mode='popLayout'>
 							<m.div
 								data-motion-content
@@ -367,39 +384,26 @@ export default function ControlsPanel() {
 								exit={{ opacity: 0, x: activeContentExitX }}
 								transition={contentTransition}
 								className={activeContentClassName}>
-								{activeTab === 'particles' ? (
-									<div tabIndex={-1} className='w-full space-y-2 px-4'>
-										<Slider
-											label='Spread'
-											value={dummySliderValue}
-											min={0}
-											max={10}
-											step={0.1}
-											digits={1}
-											onValueChange={setDummySliderValue}
-										/>
-										<ColorControl
-											label='Tint'
-											value={dummyColorValue}
-											onValueChange={setDummyColorValue}
-											onPickerActiveChange={handleColorPickerActiveChange}
-										/>
-										<Toggle
-											label='Glow'
-											checked={dummyGlowEnabled}
-											onCheckedChange={setDummyGlowEnabled}
-										/>
-										<SelectControl
-											label='Blend'
-											value={dummyBlendMode}
-											options={dummyBlendModeOptions}
-											onValueChange={setDummyBlendMode}
-										/>
+								{activeSection ? (
+									<div tabIndex={-1} className='h-full w-full overflow-y-auto px-3 py-3'>
+										<div className='space-y-1.5 pb-1.5'>
+											{activeSection.controls.map(control => (
+												<ControlRenderer
+													key={`${activeSection.id}-${control.label}`}
+													control={control}
+													settings={settings}
+													onChange={updateSetting}
+													onColorPickerActiveChange={handleColorPickerActiveChange}
+												/>
+											))}
+										</div>
 									</div>
 								) : (
-									<p className='text-xs leading-none font-semibold text-neutral-400'>
-										{activeTabConfig.label} Panel
-									</p>
+									<div className='flex h-full w-full items-center justify-center px-4'>
+										<p className='text-xs leading-none font-semibold text-neutral-400'>
+											{activeTabConfig.label} Panel
+										</p>
+									</div>
 								)}
 							</m.div>
 						</AnimatePresence>
@@ -407,5 +411,74 @@ export default function ControlsPanel() {
 				) : null}
 			</AnimatePresence>
 		</>
+	)
+}
+
+function ControlRenderer({
+	control,
+	settings,
+	onChange,
+	onColorPickerActiveChange,
+}: {
+	control: ControlDefinition
+	settings: SceneSettings
+	onChange: <TGroup extends keyof SceneSettings, TKey extends keyof SceneSettings[TGroup]>(
+		group: TGroup,
+		key: TKey,
+		value: SceneSettings[TGroup][TKey]
+	) => void
+	onColorPickerActiveChange?: (active: boolean) => void
+}) {
+	const currentValue =
+		settings[control.group][control.settingKey as keyof SceneSettings[typeof control.group]]
+
+	if (control.kind === 'slider') {
+		return (
+			<Slider
+				label={control.label}
+				value={Number(currentValue)}
+				min={control.min}
+				max={control.max}
+				step={control.step}
+				digits={control.digits}
+				onValueChange={value =>
+					onChange(control.group, control.settingKey as never, value as never)
+				}
+			/>
+		)
+	}
+
+	if (control.kind === 'toggle') {
+		return (
+			<Toggle
+				label={control.label}
+				checked={Boolean(currentValue)}
+				onCheckedChange={value =>
+					onChange(control.group, control.settingKey as never, value as never)
+				}
+			/>
+		)
+	}
+
+	if (control.kind === 'color') {
+		return (
+			<ColorControl
+				label={control.label}
+				value={String(currentValue)}
+				onPickerActiveChange={onColorPickerActiveChange}
+				onValueChange={value =>
+					onChange(control.group, control.settingKey as never, value as never)
+				}
+			/>
+		)
+	}
+
+	return (
+		<SelectControl
+			label={control.label}
+			value={String(currentValue)}
+			options={control.options}
+			onValueChange={value => onChange(control.group, control.settingKey as never, value as never)}
+		/>
 	)
 }
