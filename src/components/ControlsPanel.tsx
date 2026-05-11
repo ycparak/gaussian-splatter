@@ -1,30 +1,18 @@
 'use client'
 
-import { NavigationMenu } from '@base-ui/react/navigation-menu'
 import { AnimatePresence, m } from 'motion/react'
-import type { Dispatch, ReactNode, SetStateAction } from 'react'
-import { useCallback, useEffect, useRef, useState } from 'react'
-import { flushSync } from 'react-dom'
+import type { FocusEvent, MouseEvent, ReactNode } from 'react'
+import { useCallback, useState } from 'react'
 
-import type { SceneSettings } from '@/shared/types'
 import { BloomIcon } from '@/src/components/icons/bloom'
 import { CameraIcon } from '@/src/components/icons/camera'
 import { ColorIcon } from '@/src/components/icons/color'
 import { LightingIcon } from '@/src/components/icons/lighting'
 import { ParticlesIcon } from '@/src/components/icons/particles'
-import { RandomIcon } from '@/src/components/icons/random'
 import { RendererIcon } from '@/src/components/icons/renderer'
-import { ResetIcon } from '@/src/components/icons/reset'
 import { SceneIcon } from '@/src/components/icons/scene'
-import Button from '@/src/components/ui/button'
 
-import { cloneSceneSettings, DEFAULT_SCENE_SETTINGS } from '@/src/engine/sceneSettings'
-import {
-	CONTROL_SECTIONS,
-	// type ControlDefinition,
-	type ControlSectionDefinition,
-	type SettingsGroup,
-} from '@/src/lib/sceneControlsConfig'
+import { CONTROL_SECTIONS, type SettingsGroup } from '@/src/lib/sceneControlsConfig'
 import { cn } from '@/src/lib/utils'
 
 type TabId = SettingsGroup
@@ -94,266 +82,139 @@ const labelTransition = {
 	duration: 0.34,
 } as const
 
-const panelHoverBuffer = {
-	top: 400,
-	right: 400,
-	bottom: 12,
-	left: 20,
+const activeTabLabelMotion = {
+	initial: {
+		opacity: 0,
+		x: 8,
+		scale: 0.96,
+		filter: 'blur(4px)',
+	},
+	animate: {
+		opacity: 1,
+		x: 0,
+		scale: 1,
+		filter: 'blur(0px)',
+		transition: { ...labelTransition, delay: 0.03 },
+	},
+	exit: {
+		opacity: 0,
+		x: 6,
+		scale: 0.97,
+		filter: 'blur(4px)',
+		transition: { duration: 0.14 },
+	},
+	style: { originX: 1, originY: 0.5 },
 } as const
 
-interface ControlsPanelProps {
-	settings: SceneSettings
-	onSettingsChange: Dispatch<SetStateAction<SceneSettings>>
-}
+const rootStyle = {
+	borderRadius: '10px',
+	WebkitTapHighlightColor: 'transparent',
+} as const
 
-export default function ControlsPanel({ onSettingsChange }: ControlsPanelProps) {
-	const anchorRef = useRef<HTMLElement | null>(null)
-	const panelRef = useRef<HTMLDivElement | null>(null)
-	const pointerPositionRef = useRef<{ x: number; y: number } | null>(null)
-	const rootRef = useRef<HTMLDivElement | null>(null)
+const triggerStyle = {
+	borderRadius: '7px',
+	WebkitTapHighlightColor: 'transparent',
+} as const
+
+const availableSectionIds = new Set(CONTROL_SECTIONS.map(section => section.id))
+const visibleTabs = tabs.filter(tab => availableSectionIds.has(tab.id))
+const tabsById = new Map(tabs.map(tab => [tab.id, tab] as const))
+
+export default function ControlsPanel() {
 	const [activeTab, setActiveTab] = useState<TabId | null>(null)
-	const activeTabConfig = tabs.find(tab => tab.id === activeTab) ?? fallbackTab
+	const activeTabConfig = (activeTab && tabsById.get(activeTab)) ?? fallbackTab
 
-	const isPointInControlsArea = useCallback((point = pointerPositionRef.current) => {
-		if (!point) {
-			return false
-		}
-
-		const menuBounds = anchorRef.current?.getBoundingClientRect()
-
-		if (
-			menuBounds &&
-			point.x >= menuBounds.left &&
-			point.x <= menuBounds.right &&
-			point.y >= menuBounds.top &&
-			point.y <= menuBounds.bottom
-		) {
-			return true
-		}
-
-		const panelBounds = panelRef.current?.getBoundingClientRect()
-
-		if (!panelBounds) {
-			return false
-		}
-
-		return (
-			point.x >= panelBounds.left - panelHoverBuffer.left &&
-			point.x <= panelBounds.right + panelHoverBuffer.right &&
-			point.y >= panelBounds.top - panelHoverBuffer.top &&
-			point.y <= panelBounds.bottom + panelHoverBuffer.bottom
-		)
-	}, [])
-
-	const handleValueChange = useCallback(
-		(value: TabId | null) => {
-			if (value === null && isPointInControlsArea()) {
-				return
-			}
-
-			setActiveTab(value)
-		},
-		[isPointInControlsArea]
-	)
-
-	useEffect(() => {
-		if (!activeTab) {
+	const activateTabFromTrigger = useCallback((trigger: HTMLButtonElement) => {
+		const triggerId = trigger.dataset.controlsTrigger
+		if (!triggerId) {
 			return
 		}
 
-		function handlePointerMove(event: PointerEvent) {
-			const point = { x: event.clientX, y: event.clientY }
-			pointerPositionRef.current = point
-
-			if (!isPointInControlsArea(point)) {
-				setActiveTab(null)
-			}
+		if (!tabsById.has(triggerId as TabId)) {
+			return
 		}
 
-		window.addEventListener('pointermove', handlePointerMove)
+		const tabId = triggerId as TabId
+		setActiveTab(currentActiveTab => (currentActiveTab === tabId ? currentActiveTab : tabId))
+	}, [])
 
-		return () => {
-			window.removeEventListener('pointermove', handlePointerMove)
-		}
-	}, [activeTab, isPointInControlsArea])
+	const handleTriggerFocus = useCallback(
+		(event: FocusEvent<HTMLButtonElement>) => {
+			activateTabFromTrigger(event.currentTarget)
+		},
+		[activateTabFromTrigger]
+	)
 
-	function resetSection(group: SettingsGroup) {
-		onSettingsChange(currentSettings => ({
-			...currentSettings,
-			[group]: cloneSceneSettings(DEFAULT_SCENE_SETTINGS)[group],
-		}))
-	}
+	const handleTriggerMouseEnter = useCallback(
+		(event: MouseEvent<HTMLButtonElement>) => {
+			activateTabFromTrigger(event.currentTarget)
+		},
+		[activateTabFromTrigger]
+	)
 
-	function randomizeSection(section: ControlSectionDefinition) {
-		onSettingsChange(currentSettings => {
-			const nextGroup = { ...currentSettings[section.id] }
-
-			for (const control of section.controls) {
-				const _key = control.settingKey as keyof typeof nextGroup
-				// nextGroup[key] = randomizeControl(control) as never;
-			}
-
-			return {
-				...currentSettings,
-				[section.id]: nextGroup,
-			}
-		})
-	}
-
-	function isFocusWithinControlsMenu(
-		currentTarget: EventTarget | null,
-		target: EventTarget | null
-	) {
-		if (!(currentTarget instanceof HTMLElement)) {
-			return false
+	const handleRootBlur = useCallback((event: FocusEvent<HTMLElement>) => {
+		const nextFocusedElement = event.relatedTarget
+		if (!(nextFocusedElement instanceof HTMLElement)) {
+			setActiveTab(null)
+			return
 		}
 
-		if (!(target instanceof HTMLElement)) {
-			return false
+		if (!event.currentTarget.contains(nextFocusedElement)) {
+			setActiveTab(null)
 		}
+	}, [])
 
-		return Boolean(
-			currentTarget.contains(target) || target.closest('[data-controls-panel-content]')
-		)
-	}
+	const handleRootMouseLeave = useCallback(() => {
+		setActiveTab(null)
+	}, [])
 
 	return (
-		<NavigationMenu.Root<TabId>
-			ref={anchorRef}
-			onBlur={event => {
-				if (!isFocusWithinControlsMenu(event.currentTarget, event.relatedTarget)) {
-					setActiveTab(null)
-				}
-			}}
+		<nav
 			aria-label='Scene controls'
-			value={activeTab}
-			onValueChange={handleValueChange}
-			delay={0}
-			closeDelay={0}
-			onPointerMove={event => {
-				pointerPositionRef.current = {
-					x: event.clientX,
-					y: event.clientY,
-				}
-			}}
+			onBlur={handleRootBlur}
+			onMouseLeave={handleRootMouseLeave}
 			className='pointer-events-auto fixed bottom-5 left-5 z-9 flex h-9 w-75.5 items-center overflow-visible border border-white/10 bg-neutral-900/65 px-0.5 backdrop-blur-[10px]'
-			style={{
-				borderRadius: '10px',
-				WebkitTapHighlightColor: 'transparent',
-			}}>
-			<div ref={rootRef} className='pointer-events-none flex min-w-0 flex-1 items-center'>
+			style={rootStyle}>
+			<div className='pointer-events-none flex min-w-0 flex-1 items-center'>
 				<AnimatePresence initial={false} mode='popLayout'>
 					<m.span
 						key={activeTabConfig.label}
-						initial={{
-							opacity: 0,
-							x: 8,
-							scale: 0.96,
-							filter: 'blur(4px)',
-						}}
-						animate={{
-							opacity: 1,
-							x: 0,
-							scale: 1,
-							filter: 'blur(0px)',
-							transition: { ...labelTransition, delay: 0.03 },
-						}}
-						exit={{
-							opacity: 0,
-							x: 6,
-							scale: 0.97,
-							filter: 'blur(4px)',
-							transition: { duration: 0.14 },
-						}}
-						style={{ originX: 1, originY: 0.5 }}
+						initial={activeTabLabelMotion.initial}
+						animate={activeTabLabelMotion.animate}
+						exit={activeTabLabelMotion.exit}
+						style={activeTabLabelMotion.style}
 						className='block truncate pl-4 text-xs leading-3 font-semibold text-neutral-400'>
 						{activeTabConfig.label}
 					</m.span>
 				</AnimatePresence>
 			</div>
 
-			<NavigationMenu.List className='ml-auto flex shrink-0 items-center'>
-				{tabs.map(tab => {
-					const section = CONTROL_SECTIONS.find(controlSection => controlSection.id === tab.id)
-
-					if (!section) return null
-
-					return (
-						<NavigationMenu.Item key={tab.id} value={tab.id}>
-							<NavigationMenu.Trigger
-								aria-label={tab.label}
-								tabIndex={0}
-								render={
-									<m.button
-										type='button'
-										data-controls-trigger={tab.id}
-										onFocus={() => flushSync(() => setActiveTab(tab.id))}
-										onMouseEnter={() => flushSync(() => setActiveTab(tab.id))}
-										style={{
-											borderRadius: '7px',
-											WebkitTapHighlightColor: 'transparent',
-										}}
-										className={cn(
-											'relative flex size-7.5 items-center justify-center text-neutral-400 outline-none transition-colors focus-visible:ring-0',
-											activeTab === tab.id && 'text-neutral-200'
-										)}
-									/>
-								}>
-								{activeTab === tab.id ? (
-									<m.span
-										layoutId='controls-bubble'
-										className='absolute inset-0 bg-white/10'
-										style={{ borderRadius: '7px' }}
-										transition={islandTransition}
-									/>
-								) : null}
-								<span className='relative z-10'>{tab.icon}</span>
-							</NavigationMenu.Trigger>
-
-							<NavigationMenu.Content
-								data-controls-panel-content
-								className='flex w-82 flex-col gap-1 transition-[opacity,transform] duration-250 ease-out data-[activation-direction=left]:data-starting-style:-translate-x-6 data-[activation-direction=left]:data-ending-style:translate-x-6 data-[activation-direction=right]:data-starting-style:translate-x-6 data-[activation-direction=right]:data-ending-style:-translate-x-6 data-ending-style:opacity-0 data-starting-style:opacity-0'>
-								<div className='grid grid-cols-2 gap-1'>
-									<Button
-										className='w-full'
-										icon={<RandomIcon className='size-4' />}
-										tabIndex={-1}
-										onClick={() => randomizeSection(section)}>
-										Randomise
-									</Button>
-									<Button
-										className='w-full'
-										icon={<ResetIcon className='size-4' />}
-										tabIndex={-1}
-										onClick={() => resetSection(section.id)}>
-										Reset
-									</Button>
-								</div>
-
-								<div className='-mx-5 flex max-h-[calc(100dvh-128px)] flex-col gap-1 overflow-x-hidden overflow-y-auto px-5'></div>
-							</NavigationMenu.Content>
-						</NavigationMenu.Item>
-					)
-				})}
-			</NavigationMenu.List>
-
-			<NavigationMenu.Portal>
-				<NavigationMenu.Positioner
-					anchor={anchorRef}
-					side='top'
-					align='start'
-					sideOffset={12}
-					positionMethod='fixed'
-					collisionPadding={{ top: 20, bottom: 20, left: 20, right: 20 }}
-					collisionAvoidance={{ side: 'none', align: 'none' }}
-					className='z-9'>
-					<NavigationMenu.Popup
-						ref={panelRef}
-						className='w-82 overflow-visible rounded-[10px] transition-[opacity,transform,width,height] duration-250ms ease-out data-ending-style:translate-y-2 data-ending-style:opacity-0 data-starting-style:translate-y-2 data-starting-style:opacity-0'>
-						<NavigationMenu.Viewport className='relative w-82 overflow-visible' />
-					</NavigationMenu.Popup>
-				</NavigationMenu.Positioner>
-			</NavigationMenu.Portal>
-		</NavigationMenu.Root>
+			<div className='ml-auto flex shrink-0 items-center'>
+				{visibleTabs.map(tab => (
+					<m.button
+						key={tab.id}
+						type='button'
+						aria-label={tab.label}
+						data-controls-trigger={tab.id}
+						onFocus={handleTriggerFocus}
+						onMouseEnter={handleTriggerMouseEnter}
+						style={triggerStyle}
+						className={cn(
+							'relative flex size-7.5 items-center justify-center text-neutral-400 outline-none transition-colors focus-visible:ring-0',
+							activeTab === tab.id && 'text-neutral-200'
+						)}>
+						{activeTab === tab.id ? (
+							<m.span
+								layoutId='controls-bubble'
+								className='absolute inset-0 bg-white/10'
+								style={triggerStyle}
+								transition={islandTransition}
+							/>
+						) : null}
+						<span className='relative z-10'>{tab.icon}</span>
+					</m.button>
+				))}
+			</div>
+		</nav>
 	)
 }

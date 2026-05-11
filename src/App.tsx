@@ -47,9 +47,7 @@ export default function App() {
 	const [isInfoOpen, setIsInfoOpen] = useState(false)
 	const [activeSceneId, setActiveSceneId] = useState<string | null>(defaultScene?.id ?? null)
 	const [sceneErrorMessage, setSceneErrorMessage] = useState<string | null>(null)
-	const [sceneSettings, setSceneSettings] = useState<SceneSettings>(() =>
-		cloneSceneSettings(DEFAULT_SCENE_SETTINGS)
-	)
+	const [sceneSettings] = useState<SceneSettings>(() => cloneSceneSettings(DEFAULT_SCENE_SETTINGS))
 	const recordingSession = useRecordingSession(threeRef)
 	const {
 		clearTimers: clearRecordingTimers,
@@ -195,7 +193,7 @@ export default function App() {
 						onTogglePause={handleTogglePause}
 					/>
 
-					<ControlsPanel settings={sceneSettings} onSettingsChange={setSceneSettings} />
+					<ControlsPanel />
 
 					<ImagePanel
 						activeSceneId={activeSceneId}

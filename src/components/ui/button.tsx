@@ -74,7 +74,7 @@ export default Button
 
 const variantStyles: Record<ButtonVariant, string> = {
 	default:
-		'border border-white/5 bg-neutral-800/50 text-neutral-400 hover:bg-neutral-800/75 hover:text-neutral-300 focus-visible:border-white/20',
+		'border border-white/5 bg-neutral-800/50 text-neutral-400 hover:bg-neutral-800/75 hover:text-neutral-300 focus-visible:border-white/20 focus-visible:outline-none',
 }
 
 const sizeStyles: Record<ButtonSize, string> = {
