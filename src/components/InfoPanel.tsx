@@ -1,6 +1,7 @@
 'use client'
 
 import { m } from 'motion/react'
+import { useEffect } from 'react'
 
 interface InfoPanelProps {
 	onRequestClose: () => void
@@ -36,6 +37,19 @@ const variants = {
 }
 
 export default function InfoPanel({ onRequestClose }: InfoPanelProps) {
+	useEffect(() => {
+		function handleKeyDown(event: KeyboardEvent) {
+			if (event.key !== 'Escape') return
+			onRequestClose()
+		}
+
+		window.addEventListener('keydown', handleKeyDown)
+
+		return () => {
+			window.removeEventListener('keydown', handleKeyDown)
+		}
+	}, [onRequestClose])
+
 	return (
 		<m.div
 			key='info-panel'
