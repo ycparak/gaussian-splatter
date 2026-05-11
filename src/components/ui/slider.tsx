@@ -288,9 +288,8 @@ export default function Slider({
 				onMouseEnter={() => setIsHovered(true)}
 				onMouseLeave={() => setIsHovered(false)}
 				className={cn(
-					'absolute inset-0 overflow-hidden bg-neutral-800/50 touch-none select-none',
-					isInteracting ? 'cursor-grabbing' : 'cursor-grab',
-					isActive && 'bg-neutral-700/35'
+					'absolute inset-0 overflow-hidden bg-black/80 touch-none select-none',
+					isInteracting ? 'cursor-grabbing' : 'cursor-grab'
 				)}
 				style={{
 					width: rubberBandWidth,
@@ -301,8 +300,8 @@ export default function Slider({
 				{/* Fill */}
 				<m.div
 					className={cn(
-						'pointer-events-none absolute inset-y-0 left-0 bg-white/10 transition-colors',
-						isActive && 'bg-white/15'
+						'pointer-events-none absolute inset-y-0 left-0 bg-white/15 transition-colors',
+						isActive && 'bg-white/20'
 					)}
 					style={{ width: fillWidth }}
 				/>
@@ -342,6 +341,7 @@ export default function Slider({
 						className='absolute top-1/2 right-2.5 w-[6ch] max-w-[6ch] min-w-[3ch] -translate-y-1/2 border-0 border-b border-neutral-400 bg-transparent p-0 pb-px text-right text-[13px] leading-none font-medium text-neutral-300 outline-none focus:text-white'
 					/>
 				) : (
+					// Label Right
 					<button
 						type='button'
 						ref={valueRef}

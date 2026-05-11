@@ -13,7 +13,6 @@ import { LightingIcon } from '@/src/components/icons/lighting'
 import { ParticlesIcon } from '@/src/components/icons/particles'
 import { RendererIcon } from '@/src/components/icons/renderer'
 import { SceneIcon } from '@/src/components/icons/scene'
-import RangeSlider from '@/src/components/ui/range-slider'
 import Slider from '@/src/components/ui/slider'
 
 import { CONTROL_SECTIONS, type SettingsGroup } from '@/src/lib/sceneControlsConfig'
@@ -140,7 +139,6 @@ function getContentMotionClass(activationDirection: 'left' | 'right' | 'up' | 'd
 export default function ControlsPanel() {
 	const [activeTab, setActiveTab] = useState<TabId | null>(null)
 	const [dummySliderValue, setDummySliderValue] = useState(6)
-	const [dummyParticleValue, setDummyParticleValue] = useState(6)
 	const menuAnchorRef = useRef<HTMLElement | null>(null)
 	const activeTabConfig = (activeTab && tabsById.get(activeTab)) ?? fallbackTab
 
@@ -245,16 +243,6 @@ export default function ControlsPanel() {
 											step={0.1}
 											digits={1}
 											onValueChange={setDummySliderValue}
-										/>
-										<RangeSlider
-											label='Spread'
-											value={dummyParticleValue}
-											min={0}
-											max={10}
-											step={0.1}
-											digits={1}
-											tabIndex={-1}
-											onValueChange={setDummyParticleValue}
 										/>
 									</div>
 								) : (
