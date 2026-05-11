@@ -15,6 +15,7 @@ import { SceneIcon } from '@/src/components/icons/scene'
 import ColorControl from '@/src/components/ui/color-control'
 import SelectControl from '@/src/components/ui/select-control'
 import Slider from '@/src/components/ui/slider'
+import Toggle from '@/src/components/ui/toggle'
 
 import { CONTROL_SECTIONS, type SettingsGroup } from '@/src/lib/sceneControlsConfig'
 import { cn } from '@/src/lib/utils'
@@ -190,6 +191,7 @@ export default function ControlsPanel() {
 	const [previousActiveTab, setPreviousActiveTab] = useState<TabId | null>(null)
 	const [dummySliderValue, setDummySliderValue] = useState(6)
 	const [dummyColorValue, setDummyColorValue] = useState('#ff7a00')
+	const [dummyGlowEnabled, setDummyGlowEnabled] = useState(true)
 	const [dummyBlendMode, setDummyBlendMode] = useState('normal')
 	const rootRef = useRef<HTMLElement | null>(null)
 	const popupRef = useRef<HTMLDivElement | null>(null)
@@ -367,12 +369,6 @@ export default function ControlsPanel() {
 								className={activeContentClassName}>
 								{activeTab === 'particles' ? (
 									<div tabIndex={-1} className='w-full space-y-2 px-4'>
-										<SelectControl
-											label='Blend'
-											value={dummyBlendMode}
-											options={dummyBlendModeOptions}
-											onValueChange={setDummyBlendMode}
-										/>
 										<Slider
 											label='Spread'
 											value={dummySliderValue}
@@ -387,6 +383,17 @@ export default function ControlsPanel() {
 											value={dummyColorValue}
 											onValueChange={setDummyColorValue}
 											onPickerActiveChange={handleColorPickerActiveChange}
+										/>
+										<Toggle
+											label='Glow'
+											checked={dummyGlowEnabled}
+											onCheckedChange={setDummyGlowEnabled}
+										/>
+										<SelectControl
+											label='Blend'
+											value={dummyBlendMode}
+											options={dummyBlendModeOptions}
+											onValueChange={setDummyBlendMode}
 										/>
 									</div>
 								) : (
