@@ -1,4 +1,4 @@
-import { AnimatePresence, domAnimation, LazyMotion, MotionConfig, m } from 'motion/react'
+import { AnimatePresence, domMax, LazyMotion, MotionConfig, m } from 'motion/react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { SceneAsset, SceneLoadCallbacks, SceneSettings } from '@/shared/types'
 import ActionPanel from '@/src/components/ActionPanel'
@@ -165,7 +165,7 @@ export default function App() {
 	}, [sceneSettings])
 
 	return (
-		<LazyMotion features={domAnimation}>
+		<LazyMotion features={domMax}>
 			<MotionConfig reducedMotion='user'>
 				<div ref={containerRef} className='fixed inset-0 overflow-hidden' />
 

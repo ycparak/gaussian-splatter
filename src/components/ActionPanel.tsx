@@ -94,6 +94,7 @@ export default function ActionPanel({
 		<m.div
 			role='toolbar'
 			aria-label='Dynamic island quick actions'
+			layoutRoot
 			initial={false}
 			animate={{
 				width: isRecording ? RECORDING_WIDTH : (activeTabConfig?.width ?? IDLE_WIDTH),
