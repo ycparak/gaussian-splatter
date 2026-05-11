@@ -40,6 +40,11 @@ interface ControlsPanelProps {
 
 const tabs: Tab[] = [
 	{
+		id: 'camera',
+		label: 'Camera',
+		icon: <CameraIcon className='size-4' />,
+	},
+	{
 		id: 'particles',
 		label: 'Particles',
 		icon: <ParticlesIcon className='size-4' />,
@@ -55,19 +60,14 @@ const tabs: Tab[] = [
 		icon: <LightingIcon className='size-4' />,
 	},
 	{
-		id: 'bloom',
-		label: 'Bloom',
-		icon: <BloomIcon className='size-4' />,
-	},
-	{
 		id: 'color',
 		label: 'Color',
 		icon: <ColorIcon className='size-4' />,
 	},
 	{
-		id: 'camera',
-		label: 'Camera',
-		icon: <CameraIcon className='size-4' />,
+		id: 'bloom',
+		label: 'Bloom',
+		icon: <BloomIcon className='size-4' />,
 	},
 	{
 		id: 'renderer',
@@ -122,6 +122,11 @@ const activeTabLabelMotion = {
 	style: { originX: 1, originY: 0.5 },
 } as const
 
+const contentFadeTransition = {
+	duration: 0.24,
+	ease: 'easeInOut',
+} as const
+
 const rootStyle = {
 	borderRadius: '10px',
 	WebkitTapHighlightColor: 'transparent',
@@ -150,63 +155,10 @@ const popupHeightsByTab = {
 const availableSectionIds = new Set(CONTROL_SECTIONS.map(section => section.id))
 const visibleTabs = tabs.filter(tab => availableSectionIds.has(tab.id))
 const tabsById = new Map(tabs.map(tab => [tab.id, tab] as const))
-const tabIndexById = new Map(visibleTabs.map((tab, index) => [tab.id, index] as const))
 const popupId = 'scene-controls-panel-popup'
-
-function getContentMotionClass(activationDirection: 'left' | 'right' | null) {
-	if (activationDirection === 'left') {
-		return 'controls-panel-content-horizontal-left'
-	}
-
-	if (activationDirection === 'right') {
-		return 'controls-panel-content-horizontal-right'
-	}
-
-	return 'controls-panel-content-default'
-}
-
-function getActivationDirection(previousTab: TabId | null, activeTab: TabId | null) {
-	if (!previousTab || !activeTab) {
-		return null
-	}
-
-	const previousIndex = tabIndexById.get(previousTab)
-	const activeIndex = tabIndexById.get(activeTab)
-
-	if (previousIndex == null || activeIndex == null || previousIndex === activeIndex) {
-		return null
-	}
-
-	return activeIndex > previousIndex ? 'right' : 'left'
-}
-
-function getContentInitialX(activationDirection: 'left' | 'right' | null) {
-	if (activationDirection === 'left') {
-		return -28
-	}
-
-	if (activationDirection === 'right') {
-		return 28
-	}
-
-	return 0
-}
-
-function getContentExitX(activationDirection: 'left' | 'right' | null) {
-	if (activationDirection === 'left') {
-		return 28
-	}
-
-	if (activationDirection === 'right') {
-		return -28
-	}
-
-	return 0
-}
 
 export default function ControlsPanel({ settings, onSettingsChange }: ControlsPanelProps) {
 	const [activeTab, setActiveTab] = useState<TabId | null>(null)
-	const [previousActiveTab, setPreviousActiveTab] = useState<TabId | null>(null)
 	const rootRef = useRef<HTMLElement | null>(null)
 	const popupRef = useRef<HTMLDivElement | null>(null)
 	const isColorPickerActiveRef = useRef(false)
@@ -215,13 +167,7 @@ export default function ControlsPanel({ settings, onSettingsChange }: ControlsPa
 		? CONTROL_SECTIONS.find(section => section.id === activeTab)
 		: undefined
 	const activePopupHeight = activeTab ? popupHeightsByTab[activeTab] : popupHeightsByTab.renderer
-	const activationDirection = getActivationDirection(previousActiveTab, activeTab)
-	const activeContentClassName = cn(
-		'controls-panel-content absolute inset-0 h-full w-full',
-		getContentMotionClass(activationDirection)
-	)
-	const activeContentInitialX = getContentInitialX(activationDirection)
-	const activeContentExitX = getContentExitX(activationDirection)
+	const activeContentClassName = 'controls-panel-content absolute inset-0 h-full w-full'
 
 	const openTab = useCallback(
 		(tabId: TabId) => {
@@ -229,14 +175,12 @@ export default function ControlsPanel({ settings, onSettingsChange }: ControlsPa
 				return
 			}
 
-			setPreviousActiveTab(activeTab)
 			setActiveTab(tabId)
 		},
 		[activeTab]
 	)
 
 	const closePanel = useCallback(() => {
-		setPreviousActiveTab(null)
 		setActiveTab(null)
 	}, [])
 
@@ -382,8 +326,8 @@ export default function ControlsPanel({ settings, onSettingsChange }: ControlsPa
 						tabIndex={-1}
 						key='controls-popup'
 						initial={false}
-						animate={{ height: activePopupHeight, opacity: 1, y: 0 }}
-						exit={{ opacity: 0, y: 8 }}
+						animate={{ height: activePopupHeight, opacity: 1, filter: 'blur(0px)' }}
+						exit={{ opacity: 0, filter: 'blur(16px)' }}
 						transition={{
 							...contentTransition,
 							height: islandTransition,
@@ -395,10 +339,10 @@ export default function ControlsPanel({ settings, onSettingsChange }: ControlsPa
 								data-motion-content
 								key={activeTab}
 								tabIndex={-1}
-								initial={{ opacity: 0, x: activeContentInitialX }}
-								animate={{ opacity: 1, x: 0 }}
-								exit={{ opacity: 0, x: activeContentExitX }}
-								transition={contentTransition}
+								initial={{ opacity: 0, filter: 'blur(12px)' }}
+								animate={{ opacity: 1, filter: 'blur(0px)' }}
+								exit={{ opacity: 0, filter: 'blur(12px)' }}
+								transition={contentFadeTransition}
 								className={activeContentClassName}>
 								{activeSection ? (
 									<div tabIndex={-1} className='h-full w-full overflow-y-auto px-3 py-3'>
