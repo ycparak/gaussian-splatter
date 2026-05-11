@@ -13,6 +13,7 @@ import { LightingIcon } from '@/src/components/icons/lighting'
 import { ParticlesIcon } from '@/src/components/icons/particles'
 import { RendererIcon } from '@/src/components/icons/renderer'
 import { SceneIcon } from '@/src/components/icons/scene'
+import ColorControl from '@/src/components/ui/color-control'
 import Slider from '@/src/components/ui/slider'
 
 import { CONTROL_SECTIONS, type SettingsGroup } from '@/src/lib/sceneControlsConfig'
@@ -120,6 +121,8 @@ const triggerStyle = {
 	WebkitTapHighlightColor: 'transparent',
 } as const
 
+const PICKER_CLOSE_GRACE_MS = 320
+
 const availableSectionIds = new Set(CONTROL_SECTIONS.map(section => section.id))
 const visibleTabs = tabs.filter(tab => availableSectionIds.has(tab.id))
 const tabsById = new Map(tabs.map(tab => [tab.id, tab] as const))
@@ -139,11 +142,29 @@ function getContentMotionClass(activationDirection: 'left' | 'right' | 'up' | 'd
 export default function ControlsPanel() {
 	const [activeTab, setActiveTab] = useState<TabId | null>(null)
 	const [dummySliderValue, setDummySliderValue] = useState(6)
+	const [dummyColorValue, setDummyColorValue] = useState('#ff7a00')
+	const isColorPickerActiveRef = useRef(false)
+	const pickerCloseGuardUntilRef = useRef(0)
 	const menuAnchorRef = useRef<HTMLElement | null>(null)
 	const activeTabConfig = (activeTab && tabsById.get(activeTab)) ?? fallbackTab
 
+	const handleColorPickerActiveChange = useCallback((active: boolean) => {
+		isColorPickerActiveRef.current = active
+		if (!active) {
+			pickerCloseGuardUntilRef.current = Date.now() + PICKER_CLOSE_GRACE_MS
+		}
+
+		if (active) {
+			setActiveTab('particles')
+		}
+	}, [])
+
 	const handleValueChange = useCallback((value: TabId | null) => {
 		if (value == null) {
+			if (isColorPickerActiveRef.current || Date.now() < pickerCloseGuardUntilRef.current) {
+				return
+			}
+
 			setActiveTab(null)
 			return
 		}
@@ -162,9 +183,17 @@ export default function ControlsPanel() {
 			onValueChange={handleValueChange}
 			delay={0}
 			closeDelay={70}
-			onMouseLeave={() => setActiveTab(null)}
+			onMouseLeave={() => {
+				if (!isColorPickerActiveRef.current && Date.now() >= pickerCloseGuardUntilRef.current) {
+					setActiveTab(null)
+				}
+			}}
 			onBlur={event => {
-				if (!event.relatedTarget || !event.currentTarget.contains(event.relatedTarget)) {
+				if (
+					!isColorPickerActiveRef.current &&
+					Date.now() >= pickerCloseGuardUntilRef.current &&
+					(!event.relatedTarget || !event.currentTarget.contains(event.relatedTarget))
+				) {
 					setActiveTab(null)
 				}
 			}}
@@ -234,7 +263,7 @@ export default function ControlsPanel() {
 									)
 								}>
 								{tab.id === 'particles' ? (
-									<div className='w-full space-y-2 px-4'>
+									<div tabIndex={-1} className='w-full space-y-2 px-4'>
 										<Slider
 											label='Spread'
 											value={dummySliderValue}
@@ -243,6 +272,12 @@ export default function ControlsPanel() {
 											step={0.1}
 											digits={1}
 											onValueChange={setDummySliderValue}
+										/>
+										<ColorControl
+											label='Tint'
+											value={dummyColorValue}
+											onValueChange={setDummyColorValue}
+											onPickerActiveChange={handleColorPickerActiveChange}
 										/>
 									</div>
 								) : (

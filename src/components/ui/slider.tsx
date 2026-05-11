@@ -330,6 +330,7 @@ export default function Slider({
 
 				{showInput ? (
 					<input
+						tabIndex={-1}
 						ref={inputRef}
 						type='text'
 						value={inputValue}
@@ -343,6 +344,7 @@ export default function Slider({
 				) : (
 					// Label Right
 					<button
+						tabIndex={-1}
 						type='button'
 						ref={valueRef}
 						onMouseEnter={() => setIsValueHovered(true)}
