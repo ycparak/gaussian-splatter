@@ -137,6 +137,16 @@ const contentTransition = {
 	ease: 'easeOut',
 } as const
 
+const popupHeightsByTab = {
+	particles: 354,
+	scene: 312,
+	lighting: 312,
+	bloom: 186,
+	color: 228,
+	camera: 396,
+	renderer: 144,
+} as const satisfies Record<TabId, number>
+
 const availableSectionIds = new Set(CONTROL_SECTIONS.map(section => section.id))
 const visibleTabs = tabs.filter(tab => availableSectionIds.has(tab.id))
 const tabsById = new Map(tabs.map(tab => [tab.id, tab] as const))
@@ -204,6 +214,7 @@ export default function ControlsPanel({ settings, onSettingsChange }: ControlsPa
 	const activeSection = activeTab
 		? CONTROL_SECTIONS.find(section => section.id === activeTab)
 		: undefined
+	const activePopupHeight = activeTab ? popupHeightsByTab[activeTab] : popupHeightsByTab.renderer
 	const activationDirection = getActivationDirection(previousActiveTab, activeTab)
 	const activeContentClassName = cn(
 		'controls-panel-content absolute inset-0 h-full w-full',
@@ -365,15 +376,20 @@ export default function ControlsPanel({ settings, onSettingsChange }: ControlsPa
 			<AnimatePresence>
 				{activeTab ? (
 					<m.div
+						layoutRoot
 						ref={popupRef}
 						id={popupId}
 						tabIndex={-1}
 						key='controls-popup'
-						initial={{ opacity: 0, y: 8 }}
-						animate={{ opacity: 1, y: 0 }}
+						initial={false}
+						animate={{ height: activePopupHeight, opacity: 1, y: 0 }}
 						exit={{ opacity: 0, y: 8 }}
-						transition={contentTransition}
-						className='pointer-events-auto fixed bottom-16 left-5 z-10 h-108.5 w-75.5 overflow-hidden rounded-[10px] border border-white/10 bg-neutral-900/65 backdrop-blur-[10px]'>
+						transition={{
+							...contentTransition,
+							height: islandTransition,
+						}}
+						style={{ transformOrigin: 'left bottom' }}
+						className='pointer-events-auto fixed bottom-16 left-5 z-10 w-75.5 overflow-hidden rounded-[10px] border border-white/10 bg-neutral-900/65 backdrop-blur-[10px]'>
 						<AnimatePresence initial={false} mode='popLayout'>
 							<m.div
 								data-motion-content
