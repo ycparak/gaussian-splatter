@@ -56,7 +56,7 @@ export default function InfoPanel({ onRequestClose }: InfoPanelProps) {
 					href='https://yusufparak.com'
 					target='_blank'
 					rel='noreferrer'
-					className='text-neutral-300 transition-colors hover:text-white cursor-default'>
+					className='text-neutral-300 transition-colors hover:text-white cursor-default focus-visible:ring-0 focus-visible:outline-none focus-visible:text-white'>
 					Yusuf Parak
 				</a>
 				.

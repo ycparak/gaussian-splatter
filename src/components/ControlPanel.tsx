@@ -1,9 +1,10 @@
 'use client'
 
+import '../styles/panel.css'
+import { NavigationMenu } from '@base-ui/react/navigation-menu'
 import { AnimatePresence, m } from 'motion/react'
-import { cloneElement, isValidElement } from 'react'
-import type { FocusEvent, MouseEvent, ReactElement, ReactNode } from 'react'
-import { useCallback, useState } from 'react'
+import { cloneElement, isValidElement, useCallback, useRef, useState } from 'react'
+import type { ReactElement, ReactNode } from 'react'
 
 import { BloomIcon } from '@/src/components/icons/bloom'
 import { CameraIcon } from '@/src/components/icons/camera'
@@ -61,6 +62,7 @@ const tabs: Tab[] = [
 		icon: <RendererIcon className='size-4' />,
 	},
 ]
+
 const fallbackTab = {
 	id: 'controls',
 	label: 'Controls',
@@ -121,61 +123,46 @@ const availableSectionIds = new Set(CONTROL_SECTIONS.map(section => section.id))
 const visibleTabs = tabs.filter(tab => availableSectionIds.has(tab.id))
 const tabsById = new Map(tabs.map(tab => [tab.id, tab] as const))
 
+function getContentMotionClass(activationDirection: 'left' | 'right' | 'up' | 'down' | null) {
+	if (activationDirection === 'left') {
+		return 'controls-panel-content-horizontal-left'
+	}
+
+	if (activationDirection === 'right') {
+		return 'controls-panel-content-horizontal-right'
+	}
+
+	return 'controls-panel-content-default'
+}
+
 export default function ControlsPanel() {
 	const [activeTab, setActiveTab] = useState<TabId | null>(null)
+	const menuAnchorRef = useRef<HTMLElement | null>(null)
 	const activeTabConfig = (activeTab && tabsById.get(activeTab)) ?? fallbackTab
 
-	const activateTabFromTrigger = useCallback((trigger: HTMLButtonElement) => {
-		const triggerId = trigger.dataset.controlsTrigger
-		if (!triggerId) {
-			return
-		}
-
-		if (!tabsById.has(triggerId as TabId)) {
-			return
-		}
-
-		const tabId = triggerId as TabId
-		setActiveTab(currentActiveTab => (currentActiveTab === tabId ? currentActiveTab : tabId))
-	}, [])
-
-	const handleTriggerFocus = useCallback(
-		(event: FocusEvent<HTMLButtonElement>) => {
-			activateTabFromTrigger(event.currentTarget)
-		},
-		[activateTabFromTrigger]
-	)
-
-	const handleTriggerMouseEnter = useCallback(
-		(event: MouseEvent<HTMLButtonElement>) => {
-			activateTabFromTrigger(event.currentTarget)
-		},
-		[activateTabFromTrigger]
-	)
-
-	const handleRootBlur = useCallback((event: FocusEvent<HTMLElement>) => {
-		const nextFocusedElement = event.relatedTarget
-		if (!(nextFocusedElement instanceof HTMLElement)) {
+	const handleValueChange = useCallback((value: TabId | null) => {
+		if (value == null) {
 			setActiveTab(null)
 			return
 		}
 
-		if (!event.currentTarget.contains(nextFocusedElement)) {
-			setActiveTab(null)
+		if (!tabsById.has(value)) {
+			return
 		}
-	}, [])
 
-	const handleRootMouseLeave = useCallback(() => {
-		setActiveTab(null)
+		setActiveTab(currentActiveTab => (currentActiveTab === value ? currentActiveTab : value))
 	}, [])
 
 	return (
-		<nav
+		<NavigationMenu.Root<TabId>
 			aria-label='Scene controls'
-			onBlur={handleRootBlur}
-			onMouseLeave={handleRootMouseLeave}
+			value={activeTab}
+			onValueChange={handleValueChange}
+			delay={0}
+			closeDelay={70}
 			className='pointer-events-auto fixed bottom-5 left-5 z-9 flex h-9 w-75.5 items-center overflow-visible border border-white/10 bg-neutral-900/65 px-0.5 backdrop-blur-[10px]'
-			style={rootStyle}>
+			style={rootStyle}
+			ref={menuAnchorRef}>
 			<div className='pointer-events-none flex min-w-0 flex-1 items-center'>
 				<AnimatePresence initial={false} mode='popLayout'>
 					<m.span
@@ -193,7 +180,7 @@ export default function ControlsPanel() {
 				</AnimatePresence>
 			</div>
 
-			<div className='ml-auto flex shrink-0 items-center'>
+			<NavigationMenu.List className='ml-auto flex shrink-0 list-none items-center p-0'>
 				{visibleTabs.map(tab => {
 					const isActive = activeTab === tab.id
 					const iconClassName = cn(
@@ -210,28 +197,62 @@ export default function ControlsPanel() {
 						: tab.icon
 
 					return (
-						<m.button
-							key={tab.id}
-							type='button'
-							aria-label={tab.label}
-							data-controls-trigger={tab.id}
-							onFocus={handleTriggerFocus}
-							onMouseEnter={handleTriggerMouseEnter}
-							style={triggerStyle}
-							className='relative flex size-7.5 items-center justify-center outline-none focus-visible:ring-0'>
-							{isActive ? (
-								<m.span
-									layoutId='controls-bubble'
-									className='absolute inset-0 bg-white/10'
-									style={triggerStyle}
-									transition={islandTransition}
-								/>
-							) : null}
-							<span className='relative z-10'>{icon}</span>
-						</m.button>
+						<NavigationMenu.Item tabIndex={0} key={tab.id} value={tab.id}>
+							<NavigationMenu.Trigger
+								tabIndex={0}
+								aria-label={tab.label}
+								className='relative flex size-7.5 items-center justify-center outline-none focus-visible:ring-0'
+								style={triggerStyle}>
+								{isActive ? (
+									<m.span
+										layoutId='controls-bubble'
+										className='absolute inset-0 bg-white/10'
+										style={triggerStyle}
+										transition={islandTransition}
+									/>
+								) : null}
+								<span className='relative z-10'>{icon}</span>
+							</NavigationMenu.Trigger>
+
+							<NavigationMenu.Content
+								tabIndex={-1}
+								className={({ activationDirection }) =>
+									cn(
+										'controls-panel-content flex h-full w-full items-center justify-center',
+										getContentMotionClass(activationDirection)
+									)
+								}>
+								<p className='text-xs leading-none font-semibold text-neutral-400'>
+									{tab.label} Panel
+								</p>
+							</NavigationMenu.Content>
+						</NavigationMenu.Item>
 					)
 				})}
-			</div>
-		</nav>
+			</NavigationMenu.List>
+
+			<NavigationMenu.Portal tabIndex={-1}>
+				<NavigationMenu.Positioner
+					tabIndex={-1}
+					anchor={menuAnchorRef}
+					side='top'
+					align='start'
+					sideOffset={8}
+					collisionAvoidance={{ side: 'none', align: 'none', fallbackAxisSide: 'none' }}
+					className='z-10'>
+					<NavigationMenu.Popup className='relative w-(--anchor-width)' tabIndex={-1}>
+						<div
+							className='absolute -top-20 -right-20 -bottom-2 -left-20'
+							aria-hidden='true'
+							tabIndex={-1}
+						/>
+						<NavigationMenu.Viewport
+							tabIndex={-1}
+							className='relative h-120 w-(--anchor-width) overflow-hidden rounded-[10px] border border-white/10 bg-neutral-900/65 backdrop-blur-[10px]'
+						/>
+					</NavigationMenu.Popup>
+				</NavigationMenu.Positioner>
+			</NavigationMenu.Portal>
+		</NavigationMenu.Root>
 	)
 }

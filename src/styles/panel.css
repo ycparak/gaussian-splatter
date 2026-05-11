@@ -1,0 +1,32 @@
+.controls-panel-content {
+	opacity: 1;
+	transform: translateX(0);
+	transition:
+		opacity 240ms ease,
+		transform 240ms ease;
+}
+
+.controls-panel-content-horizontal-left[data-starting-style] {
+	opacity: 0;
+	transform: translateX(-28px);
+}
+
+.controls-panel-content-horizontal-left[data-ending-style] {
+	opacity: 0;
+	transform: translateX(28px);
+}
+
+.controls-panel-content-horizontal-right[data-starting-style] {
+	opacity: 0;
+	transform: translateX(28px);
+}
+
+.controls-panel-content-horizontal-right[data-ending-style] {
+	opacity: 0;
+	transform: translateX(-28px);
+}
+
+.controls-panel-content-default[data-starting-style],
+.controls-panel-content-default[data-ending-style] {
+	opacity: 0;
+}
