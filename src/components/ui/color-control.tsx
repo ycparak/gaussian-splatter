@@ -73,10 +73,10 @@ export default function ColorControl({
 					{label}
 				</span>
 
-				<div className='absolute right-3 flex justify-center items-center gap-2'>
+				<div className='absolute right-4 flex justify-center items-center gap-2'>
 					<span
 						className={cn(
-							'pb-px text-xs translate-y-px leading-none text-neutral-300 uppercase transition-colors group-hover:text-white cursor-default',
+							'text-xs leading-none text-neutral-300 uppercase transition-colors group-hover:text-white cursor-default',
 							isPickerActive && 'text-white'
 						)}>
 						{value.toUpperCase()}

@@ -13,6 +13,7 @@ import { ParticlesIcon } from '@/src/components/icons/particles'
 import { RendererIcon } from '@/src/components/icons/renderer'
 import { SceneIcon } from '@/src/components/icons/scene'
 import ColorControl from '@/src/components/ui/color-control'
+import SelectControl from '@/src/components/ui/select-control'
 import Slider from '@/src/components/ui/slider'
 
 import { CONTROL_SECTIONS, type SettingsGroup } from '@/src/lib/sceneControlsConfig'
@@ -125,6 +126,8 @@ const contentTransition = {
 	ease: 'easeOut',
 } as const
 
+const dummyBlendModeOptions = ['normal', 'screen', 'additive', 'multiply']
+
 const availableSectionIds = new Set(CONTROL_SECTIONS.map(section => section.id))
 const visibleTabs = tabs.filter(tab => availableSectionIds.has(tab.id))
 const tabsById = new Map(tabs.map(tab => [tab.id, tab] as const))
@@ -187,6 +190,7 @@ export default function ControlsPanel() {
 	const [previousActiveTab, setPreviousActiveTab] = useState<TabId | null>(null)
 	const [dummySliderValue, setDummySliderValue] = useState(6)
 	const [dummyColorValue, setDummyColorValue] = useState('#ff7a00')
+	const [dummyBlendMode, setDummyBlendMode] = useState('normal')
 	const rootRef = useRef<HTMLElement | null>(null)
 	const popupRef = useRef<HTMLDivElement | null>(null)
 	const isColorPickerActiveRef = useRef(false)
@@ -243,12 +247,16 @@ export default function ControlsPanel() {
 				return
 			}
 
+			if (target instanceof Element && target.closest('[data-controls-select-dropdown]')) {
+				return
+			}
+
 			if (isColorPickerActiveRef.current) {
 				return
 			}
 
 			closePanel()
-			}
+		}
 
 		function handleDocumentKeyDown(event: KeyboardEvent) {
 			if (event.key === 'Escape') {
@@ -359,6 +367,12 @@ export default function ControlsPanel() {
 								className={activeContentClassName}>
 								{activeTab === 'particles' ? (
 									<div tabIndex={-1} className='w-full space-y-2 px-4'>
+										<SelectControl
+											label='Blend'
+											value={dummyBlendMode}
+											options={dummyBlendModeOptions}
+											onValueChange={setDummyBlendMode}
+										/>
 										<Slider
 											label='Spread'
 											value={dummySliderValue}
