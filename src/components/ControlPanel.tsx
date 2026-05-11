@@ -189,6 +189,7 @@ export default function ControlsPanel() {
 	const [dummyColorValue, setDummyColorValue] = useState('#ff7a00')
 	const rootRef = useRef<HTMLElement | null>(null)
 	const popupRef = useRef<HTMLDivElement | null>(null)
+	const isColorPickerActiveRef = useRef(false)
 	const activeTabConfig = (activeTab && tabsById.get(activeTab)) ?? fallbackTab
 	const activationDirection = getActivationDirection(previousActiveTab, activeTab)
 	const activeContentClassName = cn(
@@ -217,6 +218,8 @@ export default function ControlsPanel() {
 
 	const handleColorPickerActiveChange = useCallback(
 		(active: boolean) => {
+			isColorPickerActiveRef.current = active
+
 			if (active) {
 				openTab('particles')
 			}
@@ -240,8 +243,12 @@ export default function ControlsPanel() {
 				return
 			}
 
+			if (isColorPickerActiveRef.current) {
+				return
+			}
+
 			closePanel()
-		}
+			}
 
 		function handleDocumentKeyDown(event: KeyboardEvent) {
 			if (event.key === 'Escape') {
