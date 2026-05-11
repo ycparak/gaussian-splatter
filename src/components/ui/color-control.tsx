@@ -55,10 +55,9 @@ export default function ColorControl({
 	const handlePickerChange = useCallback(
 		(event: ChangeEvent<HTMLInputElement>) => {
 			onValueChange?.(event.target.value)
-			setIsPickerActive(false)
-			onPickerActiveChange?.(false)
+			setIsPickerActive(true)
 		},
-		[onPickerActiveChange, onValueChange]
+		[onValueChange]
 	)
 
 	return (
@@ -68,8 +67,8 @@ export default function ColorControl({
 				style={{ WebkitTapHighlightColor: 'transparent' }}>
 				<span
 					className={cn(
-						'pointer-events-none absolute top-1/2 left-4 -translate-y-1/2 text-xs leading-none text-neutral-400 group-hover:text-neutral-300 transition-colors',
-						isPickerActive && 'text-neutral-300'
+						'pointer-events-none absolute top-1/2 left-4 -translate-y-1/2 text-xs leading-none transition-colors group-hover:text-neutral-300',
+						isPickerActive ? 'text-neutral-300' : 'text-neutral-400'
 					)}>
 					{label}
 				</span>
