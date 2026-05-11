@@ -42,6 +42,7 @@ export const Button = forwardRef<ElementRef<typeof BaseButton>, ButtonProps>(fun
 
 	return (
 		<m.span
+			tabIndex={-1}
 			className='inline-flex'
 			whileHover={disabled ? undefined : { scale: 1.04 }}
 			whileTap={disabled ? undefined : { scale: 0.94 }}

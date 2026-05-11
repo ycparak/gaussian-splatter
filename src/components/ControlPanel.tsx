@@ -163,9 +163,10 @@ export default function ControlsPanel() {
 			className='pointer-events-auto fixed bottom-5 left-5 z-9 flex h-9 w-75.5 items-center overflow-visible border border-white/10 bg-neutral-900/65 px-0.5 backdrop-blur-[10px]'
 			style={rootStyle}
 			ref={menuAnchorRef}>
-			<div className='pointer-events-none flex min-w-0 flex-1 items-center'>
+			<div tabIndex={-1} className='pointer-events-none flex min-w-0 flex-1 items-center'>
 				<AnimatePresence initial={false} mode='popLayout'>
 					<m.span
+						tabIndex={-1}
 						key={activeTabConfig.label}
 						initial={activeTabLabelMotion.initial}
 						animate={activeTabLabelMotion.animate}
@@ -197,11 +198,11 @@ export default function ControlsPanel() {
 						: tab.icon
 
 					return (
-						<NavigationMenu.Item tabIndex={0} key={tab.id} value={tab.id}>
+						<NavigationMenu.Item key={tab.id} value={tab.id}>
 							<NavigationMenu.Trigger
 								tabIndex={0}
 								aria-label={tab.label}
-								className='relative flex size-7.5 items-center justify-center outline-none focus-visible:ring-0'
+								className='relative flex size-7.5 items-center justify-center'
 								style={triggerStyle}>
 								{isActive ? (
 									<m.span
@@ -240,11 +241,11 @@ export default function ControlsPanel() {
 					sideOffset={8}
 					collisionAvoidance={{ side: 'none', align: 'none', fallbackAxisSide: 'none' }}
 					className='z-10'>
-					<NavigationMenu.Popup className='relative w-(--anchor-width)' tabIndex={-1}>
+					<NavigationMenu.Popup tabIndex={-1} className='relative w-(--anchor-width)'>
 						<div
+							tabIndex={-1}
 							className='absolute -top-20 -right-20 -bottom-2 -left-20'
 							aria-hidden='true'
-							tabIndex={-1}
 						/>
 						<NavigationMenu.Viewport
 							tabIndex={-1}
