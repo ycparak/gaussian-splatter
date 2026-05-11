@@ -184,7 +184,10 @@ export default function ControlsPanel() {
 						animate={activeTabLabelMotion.animate}
 						exit={activeTabLabelMotion.exit}
 						style={activeTabLabelMotion.style}
-						className='block truncate pl-4 text-xs leading-3 font-semibold text-neutral-400'>
+						className={cn(
+							'block truncate pl-4 text-xs leading-3 font-semibold',
+							activeTab ? 'text-neutral-300' : 'text-neutral-400'
+						)}>
 						{activeTabConfig.label}
 					</m.span>
 				</AnimatePresence>
@@ -194,8 +197,8 @@ export default function ControlsPanel() {
 				{visibleTabs.map(tab => {
 					const isActive = activeTab === tab.id
 					const iconClassName = cn(
-						'transition-colors duration-300',
-						isActive ? 'text-neutral-200' : 'text-neutral-400'
+						'transition-colors duration-100',
+						isActive ? 'text-neutral-300' : 'text-neutral-400'
 					)
 					const icon = isValidElement(tab.icon)
 						? cloneElement(tab.icon as ReactElement<{ className?: string }>, {

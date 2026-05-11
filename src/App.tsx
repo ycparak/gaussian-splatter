@@ -2,7 +2,7 @@ import { AnimatePresence, domMax, LazyMotion, MotionConfig, m } from 'motion/rea
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { SceneAsset, SceneLoadCallbacks, SceneSettings } from '@/shared/types'
 import ActionPanel from '@/src/components/ActionPanel'
-import ControlsPanel from '@/src/components/ControlsPanel'
+import ControlPanel from '@/src/components/ControlPanel'
 import ImagePanel from '@/src/components/ImagePanel'
 import InfoPanel from '@/src/components/InfoPanel'
 import InfoButtons from '@/src/components/InfoButtons'
@@ -193,7 +193,7 @@ export default function App() {
 						onTogglePause={handleTogglePause}
 					/>
 
-					<ControlsPanel />
+					<ControlPanel />
 
 					<ImagePanel
 						activeSceneId={activeSceneId}
