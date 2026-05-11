@@ -160,6 +160,12 @@ export default function ControlsPanel() {
 			onValueChange={handleValueChange}
 			delay={0}
 			closeDelay={70}
+			onMouseLeave={() => setActiveTab(null)}
+			onBlur={event => {
+				if (!event.relatedTarget || !event.currentTarget.contains(event.relatedTarget)) {
+					setActiveTab(null)
+				}
+			}}
 			className='pointer-events-auto fixed bottom-5 left-5 z-9 flex h-9 w-75.5 items-center overflow-visible border border-white/10 bg-neutral-900/65 px-0.5 backdrop-blur-[10px]'
 			style={rootStyle}
 			ref={menuAnchorRef}>
@@ -202,7 +208,9 @@ export default function ControlsPanel() {
 							<NavigationMenu.Trigger
 								tabIndex={0}
 								aria-label={tab.label}
-								className='relative flex size-7.5 items-center justify-center'
+								onMouseEnter={() => setActiveTab(tab.id)}
+								onFocus={() => setActiveTab(tab.id)}
+								className='relative flex size-7.5 items-center justify-center outline-none'
 								style={triggerStyle}>
 								{isActive ? (
 									<m.span
