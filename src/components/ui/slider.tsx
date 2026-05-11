@@ -12,8 +12,18 @@ const DEFAULT_STEP = 0.1
 const DEFAULT_VALUE = 6
 const CLICK_THRESHOLD = 3
 const DEAD_ZONE = 32
-const MAX_CURSOR_RANGE = 200
 const MAX_STRETCH = 8
+
+const valueTransition = {
+	type: 'spring',
+	bounce: 0.32,
+	duration: 0.34,
+} as const
+
+const stretchTransition = {
+	type: 'spring',
+	bounce: 0.25,
+} as const
 
 interface SliderProps {
 	label?: string
@@ -43,7 +53,10 @@ export default function Slider({
 	const resolvedStep = step > 0 ? step : DEFAULT_STEP
 	const resolvedDigits = digits ?? decimalsForStep(resolvedStep)
 	const range = Math.max(max - min, Number.EPSILON)
-	const percentage = ((value - min) / range) * 100
+	const toPercent = useCallback(
+		(nextValue: number) => ((nextValue - min) / range) * 100,
+		[min, range]
+	)
 
 	const wrapperRef = useRef<HTMLDivElement>(null)
 	const inputRef = useRef<HTMLInputElement>(null)
@@ -53,12 +66,10 @@ export default function Slider({
 
 	const pointerDownPositionRef = useRef<{ x: number; y: number } | null>(null)
 	const isClickRef = useRef(true)
-	const animationRef = useRef<ReturnType<typeof animate> | null>(null)
 	const wrapperRectRef = useRef<DOMRect | null>(null)
 	const scaleRef = useRef(1)
 
 	const [isInteracting, setIsInteracting] = useState(false)
-	const [isDragging, setIsDragging] = useState(false)
 	const [isHovered, setIsHovered] = useState(false)
 	const [isValueHovered, setIsValueHovered] = useState(false)
 	const [isValueEditable, setIsValueEditable] = useState(false)
@@ -67,9 +78,9 @@ export default function Slider({
 
 	const isActive = isInteracting || isHovered
 
-	const fillPercent = useMotionValue(percentage)
-	const fillWidth = useTransform(fillPercent, percent => `${percent}%`)
-	const handleLeft = useTransform(fillPercent, percent => `max(5px, calc(${percent}% - 9px))`)
+	const animatedValue = useMotionValue(value)
+	const fillWidth = useTransform(() => `${toPercent(animatedValue.get())}%`)
+	const handleLeft = useTransform(() => `max(7px, calc(${toPercent(animatedValue.get())}% - 9px))`)
 
 	const rubberStretchPx = useMotionValue(0)
 	const rubberBandWidth = useTransform(
@@ -79,10 +90,8 @@ export default function Slider({
 	const rubberBandX = useTransform(rubberStretchPx, stretch => (stretch < 0 ? stretch : 0))
 
 	useEffect(() => {
-		if (!isInteracting && !animationRef.current) {
-			fillPercent.jump(percentage)
-		}
-	}, [fillPercent, isInteracting, percentage])
+		void animate(animatedValue, value, valueTransition)
+	}, [animatedValue, value])
 
 	const positionToValue = useCallback(
 		(clientX: number) => {
@@ -100,11 +109,6 @@ export default function Slider({
 		[max, min, range, value]
 	)
 
-	const percentFromValue = useCallback(
-		(nextValue: number) => ((nextValue - min) / range) * 100,
-		[min, range]
-	)
-
 	const computeRubberStretch = useCallback((clientX: number, sign: number) => {
 		const rect = wrapperRectRef.current
 		if (!rect) return 0
@@ -112,7 +116,7 @@ export default function Slider({
 		const distancePast = sign < 0 ? rect.left - clientX : clientX - rect.right
 		const overflow = Math.max(0, distancePast - DEAD_ZONE)
 
-		return sign * MAX_STRETCH * Math.sqrt(Math.min(overflow / MAX_CURSOR_RANGE, 1))
+		return sign * decay(overflow, MAX_STRETCH)
 	}, [])
 
 	const handlePointerDown = useCallback(
@@ -144,7 +148,6 @@ export default function Slider({
 
 			if (isClickRef.current && distance > CLICK_THRESHOLD) {
 				isClickRef.current = false
-				setIsDragging(true)
 			}
 
 			if (!isClickRef.current) {
@@ -160,23 +163,13 @@ export default function Slider({
 				}
 
 				const nextValue = positionToValue(event.clientX)
-				const nextPercent = percentFromValue(nextValue)
-
-				if (animationRef.current) {
-					animationRef.current.stop()
-					animationRef.current = null
-				}
-
-				fillPercent.jump(nextPercent)
 				onValueChange?.(roundValue(nextValue, resolvedStep))
 			}
 		},
 		[
 			computeRubberStretch,
-			fillPercent,
 			isInteracting,
 			onValueChange,
-			percentFromValue,
 			positionToValue,
 			resolvedStep,
 			rubberStretchPx,
@@ -195,49 +188,20 @@ export default function Slider({
 					totalSteps <= 10
 						? clamp(min + Math.round((rawValue - min) / resolvedStep) * resolvedStep, min, max)
 						: snapToDecile(rawValue, min, max)
-				const nextPercent = percentFromValue(snappedValue)
-
-				if (animationRef.current) {
-					animationRef.current.stop()
-				}
-
-				animationRef.current = animate(fillPercent, nextPercent, {
-					type: 'spring',
-					stiffness: 300,
-					damping: 25,
-					mass: 0.8,
-					onComplete: () => {
-						animationRef.current = null
-					},
-				})
 
 				onValueChange?.(roundValue(snappedValue, resolvedStep))
 			}
 
 			if (rubberStretchPx.get() !== 0) {
 				void animate(rubberStretchPx, 0, {
-					type: 'spring',
-					visualDuration: 0.35,
-					bounce: 0.15,
+					...stretchTransition,
 				})
 			}
 
 			setIsInteracting(false)
-			setIsDragging(false)
 			pointerDownPositionRef.current = null
 		},
-		[
-			fillPercent,
-			isInteracting,
-			max,
-			min,
-			onValueChange,
-			percentFromValue,
-			positionToValue,
-			range,
-			resolvedStep,
-			rubberStretchPx,
-		]
+		[isInteracting, max, min, onValueChange, positionToValue, range, resolvedStep, rubberStretchPx]
 	)
 
 	useEffect(() => {
@@ -325,6 +289,7 @@ export default function Slider({
 				onMouseLeave={() => setIsHovered(false)}
 				className={cn(
 					'absolute inset-0 overflow-hidden bg-neutral-800/50 touch-none select-none',
+					isInteracting ? 'cursor-grabbing' : 'cursor-grab',
 					isActive && 'bg-neutral-700/35'
 				)}
 				style={{
@@ -426,4 +391,13 @@ function decimalsForStep(step: number) {
 
 function clamp(value: number, min: number, max: number) {
 	return Math.min(Math.max(value, min), max)
+}
+
+function decay(value: number, max: number) {
+	if (max === 0) return 0
+
+	const entry = value / max
+	const sigmoid = 2 * (1 / (1 + Math.exp(-entry)) - 0.5)
+
+	return sigmoid * max
 }
