@@ -13,6 +13,8 @@ import { LightingIcon } from '@/src/components/icons/lighting'
 import { ParticlesIcon } from '@/src/components/icons/particles'
 import { RendererIcon } from '@/src/components/icons/renderer'
 import { SceneIcon } from '@/src/components/icons/scene'
+import RangeSlider from '@/src/components/ui/range-slider'
+import Slider from '@/src/components/ui/slider'
 
 import { CONTROL_SECTIONS, type SettingsGroup } from '@/src/lib/sceneControlsConfig'
 import { cn } from '@/src/lib/utils'
@@ -137,6 +139,8 @@ function getContentMotionClass(activationDirection: 'left' | 'right' | 'up' | 'd
 
 export default function ControlsPanel() {
 	const [activeTab, setActiveTab] = useState<TabId | null>(null)
+	const [dummySliderValue, setDummySliderValue] = useState(6)
+	const [dummyParticleValue, setDummyParticleValue] = useState(6)
 	const menuAnchorRef = useRef<HTMLElement | null>(null)
 	const activeTabConfig = (activeTab && tabsById.get(activeTab)) ?? fallbackTab
 
@@ -231,9 +235,33 @@ export default function ControlsPanel() {
 										getContentMotionClass(activationDirection)
 									)
 								}>
-								<p className='text-xs leading-none font-semibold text-neutral-400'>
-									{tab.label} Panel
-								</p>
+								{tab.id === 'particles' ? (
+									<div className='w-full space-y-2 px-4'>
+										<Slider
+											label='Spread'
+											value={dummySliderValue}
+											min={0}
+											max={10}
+											step={0.1}
+											digits={1}
+											onValueChange={setDummySliderValue}
+										/>
+										<RangeSlider
+											label='Spread'
+											value={dummyParticleValue}
+											min={0}
+											max={10}
+											step={0.1}
+											digits={1}
+											tabIndex={-1}
+											onValueChange={setDummyParticleValue}
+										/>
+									</div>
+								) : (
+									<p className='text-xs leading-none font-semibold text-neutral-400'>
+										{tab.label} Panel
+									</p>
+								)}
 							</NavigationMenu.Content>
 						</NavigationMenu.Item>
 					)
