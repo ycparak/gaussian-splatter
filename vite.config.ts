@@ -8,11 +8,13 @@ import { defineConfig } from "vite";
 import glsl from "vite-plugin-glsl";
 import type { SceneAsset } from "@/shared/types";
 
+import { cloudflare } from "@cloudflare/vite-plugin";
+
 const bundledScenesModuleId = "virtual:bundled-scenes";
 const resolvedBundledScenesModuleId = `\0${bundledScenesModuleId}`;
 
 export default defineConfig({
-	plugins: [bundledScenesPlugin(), react(), tailwindcss(), glsl()],
+	plugins: [bundledScenesPlugin(), react(), tailwindcss(), glsl(), cloudflare()],
 	base: "/",
 	server: {
 		proxy: {
