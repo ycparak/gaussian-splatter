@@ -143,13 +143,13 @@ const contentTransition = {
 } as const
 
 const popupHeightsByTab = {
-	particles: 354,
-	scene: 312,
-	lighting: 312,
-	bloom: 186,
-	color: 228,
-	camera: 396,
-	renderer: 144,
+	camera: 398,
+	particles: 356,
+	scene: 314,
+	lighting: 314,
+	bloom: 188,
+	color: 230,
+	renderer: 146,
 } as const satisfies Record<TabId, number>
 
 const availableSectionIds = new Set(CONTROL_SECTIONS.map(section => section.id))
@@ -333,7 +333,7 @@ export default function ControlsPanel({ settings, onSettingsChange }: ControlsPa
 							height: islandTransition,
 						}}
 						style={{ transformOrigin: 'left bottom' }}
-						className='pointer-events-auto fixed bottom-16 left-5 z-10 w-75.5 overflow-hidden rounded-[10px] border border-white/10 bg-neutral-900/65 backdrop-blur-[10px]'>
+						className='pointer-events-auto fixed bottom-16 left-5 z-10 w-75.5 overflow-hidden rounded-2xl border border-white/10 bg-neutral-900/65 backdrop-blur-[10px]'>
 						<AnimatePresence initial={false} mode='popLayout'>
 							<m.div
 								data-motion-content
