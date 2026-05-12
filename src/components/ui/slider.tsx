@@ -288,7 +288,7 @@ export default function Slider({
 				onMouseEnter={() => setIsHovered(true)}
 				onMouseLeave={() => setIsHovered(false)}
 				className={cn(
-					'absolute inset-0 overflow-hidden bg-black/80 touch-none select-none',
+					'absolute inset-0 overflow-hidden bg-black/50 touch-none select-none',
 					isInteracting ? 'cursor-grabbing' : 'cursor-grab'
 				)}
 				style={{

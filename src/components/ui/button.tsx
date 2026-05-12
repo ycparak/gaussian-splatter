@@ -44,7 +44,6 @@ export const Button = forwardRef<ElementRef<typeof BaseButton>, ButtonProps>(fun
 		<m.span
 			tabIndex={-1}
 			className='inline-flex'
-			whileHover={disabled ? undefined : { scale: 1.04 }}
 			whileTap={disabled ? undefined : { scale: 0.94 }}
 			transition={buttonScaleTransition}>
 			<BaseButton
@@ -77,7 +76,7 @@ const variantStyles: Record<ButtonVariant, string> = {
 	default:
 		'border border-white/5 bg-neutral-800/50 text-neutral-400 hover:bg-neutral-800/75 hover:text-neutral-300 focus-visible:border-white/20 focus-visible:outline-none',
 	ghost:
-		'border border-white/5 bg-black/65 text-neutral-400 hover:bg-neutral-800/75 hover:text-neutral-300 focus-visible:border-white/20 focus-visible:outline-none',
+		'bg-black/50 text-neutral-400 hover:bg-black! hover:text-neutral-300 focus-visible:border-white/20 focus-visible:outline-none',
 }
 
 const sizeStyles: Record<ButtonSize, string> = {

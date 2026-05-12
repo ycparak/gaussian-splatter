@@ -11,8 +11,12 @@ import { CameraIcon } from '@/src/components/icons/camera'
 import { ColorIcon } from '@/src/components/icons/color'
 import { LightingIcon } from '@/src/components/icons/lighting'
 import { ParticlesIcon } from '@/src/components/icons/particles'
+import { RandomIcon } from '@/src/components/icons/random'
 import { RendererIcon } from '@/src/components/icons/renderer'
+import { ResetIcon } from '@/src/components/icons/reset'
 import { SceneIcon } from '@/src/components/icons/scene'
+import { DEFAULT_SCENE_SETTINGS, cloneSceneSettings } from '@/src/engine/sceneSettings'
+import Button from '@/src/components/ui/button'
 import ColorControl from '@/src/components/ui/color-control'
 import SelectControl from '@/src/components/ui/select-control'
 import Slider from '@/src/components/ui/slider'
@@ -143,13 +147,13 @@ const contentTransition = {
 } as const
 
 const popupHeightsByTab = {
-	camera: 398 + 44,
-	particles: 356 + 44,
-	scene: 314 + 44,
-	lighting: 314 + 44,
-	bloom: 188 + 44,
-	color: 230 + 44,
-	renderer: 146 + 44,
+	camera: 398 + 48,
+	particles: 356 + 48,
+	scene: 314 + 48,
+	lighting: 314 + 48,
+	bloom: 188 + 48,
+	color: 230 + 48,
+	renderer: 146 + 48,
 } as const satisfies Record<TabId, number>
 
 const availableSectionIds = new Set(CONTROL_SECTIONS.map(section => section.id))
@@ -201,6 +205,34 @@ export default function ControlsPanel({ settings, onSettingsChange }: ControlsPa
 					[key]: value,
 				},
 			}))
+		},
+		[onSettingsChange]
+	)
+	const resetSection = useCallback(
+		(group: SettingsGroup) => {
+			onSettingsChange(currentSettings => ({
+				...currentSettings,
+				[group]: cloneSceneSettings(DEFAULT_SCENE_SETTINGS)[group],
+			}))
+		},
+		[onSettingsChange]
+	)
+
+	const randomizeSection = useCallback(
+		(section: { id: SettingsGroup; controls: ControlDefinition[] }) => {
+			onSettingsChange(currentSettings => {
+				const nextGroup = { ...currentSettings[section.id] }
+
+				for (const control of section.controls) {
+					const key = control.settingKey as keyof typeof nextGroup
+					nextGroup[key] = randomizeControl(control) as never
+				}
+
+				return {
+					...currentSettings,
+					[section.id]: nextGroup,
+				}
+			})
 		},
 		[onSettingsChange]
 	)
@@ -345,12 +377,29 @@ export default function ControlsPanel({ settings, onSettingsChange }: ControlsPa
 								transition={contentFadeTransition}
 								className={activeContentClassName}>
 								<div className='flex h-full w-full flex-col'>
-									<header className='flex items-center shrink-0 border-b border-white/8 mx-3 px-1 py-4'>
-										<p className='text-xs leading-none text-neutral-300'>{activeTabConfig.label}</p>
+									<header className='mx-3 shrink-0 py-3'>
+										<div className='grid w-full grid-cols-2 gap-1.5'>
+											<Button
+												variant='ghost'
+												className='w-full border-white/8 bg-black/50 text-neutral-300 hover:bg-neutral-800/75 hover:text-neutral-200'
+												icon={<RandomIcon className='size-4' />}
+												onClick={() => activeSection && randomizeSection(activeSection)}
+												disabled={!activeSection}>
+												Randomise
+											</Button>
+											<Button
+												variant='ghost'
+												className='w-full border-white/8 bg-black/50 text-neutral-300 hover:bg-neutral-800/75 hover:text-neutral-200'
+												icon={<ResetIcon className='size-4' />}
+												onClick={() => activeSection && resetSection(activeSection.id)}
+												disabled={!activeSection}>
+												Reset
+											</Button>
+										</div>
 									</header>
 
 									{activeSection ? (
-										<div tabIndex={-1} className='h-full w-full flex-1 overflow-y-auto px-3 py-3'>
+										<div tabIndex={-1} className='h-full w-full flex-1 overflow-y-hidden px-3 pb-3'>
 											<div className='space-y-1.5 pb-1.5'>
 												{activeSection.controls.map(control => (
 													<ControlRenderer
@@ -447,4 +496,30 @@ function ControlRenderer({
 			onValueChange={value => onChange(control.group, control.settingKey as never, value as never)}
 		/>
 	)
+}
+
+function randomizeControl(control: ControlDefinition) {
+	if (control.kind === 'slider') {
+		const steps = Math.max(0, Math.round((control.max - control.min) / control.step))
+		const nextStep = Math.floor(Math.random() * (steps + 1))
+
+		return Number((control.min + nextStep * control.step).toFixed(control.digits))
+	}
+
+	if (control.kind === 'toggle') {
+		return Math.random() >= 0.5
+	}
+
+	if (control.kind === 'color') {
+		const channel = () =>
+			Math.floor(Math.random() * 256)
+				.toString(16)
+				.padStart(2, '0')
+
+		return `#${channel()}${channel()}${channel()}`
+	}
+
+	const optionIndex = Math.floor(Math.random() * control.options.length)
+
+	return control.options[optionIndex]?.value ?? control.options[0]?.value ?? 'none'
 }

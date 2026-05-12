@@ -135,7 +135,7 @@ export default function SelectControl({
 				type='button'
 				ref={triggerRef}
 				onClick={() => setIsOpen(open => !open)}
-				className='group absolute inset-0 flex items-center overflow-hidden rounded-[10px] bg-black/65 outline-none'
+				className='group absolute inset-0 flex items-center overflow-hidden rounded-[10px] bg-black/50 outline-none'
 				style={{ WebkitTapHighlightColor: 'transparent' }}>
 				<span
 					className={cn(
@@ -190,7 +190,7 @@ export default function SelectControl({
 										scale: 0.96,
 									}}
 									transition={{ type: 'spring', bounce: 0, duration: 0.17 }}
-									className='z-30 overflow-hidden rounded-[10px] border border-white/10 bg-black/65 p-1 backdrop-blur-[6px]'
+									className='z-30 overflow-hidden rounded-[10px] border border-white/10 bg-black/50 p-1 backdrop-blur-[6px]'
 									style={{
 										position: 'fixed',
 										left: position.left,
