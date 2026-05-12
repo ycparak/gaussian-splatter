@@ -1,7 +1,7 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "gaussian-splatter",
-  "compatibility_date": "2026-05-07",
+  "compatibility_date": "2026-05-12",
   "observability": {
     "enabled": true
   },
