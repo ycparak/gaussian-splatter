@@ -143,13 +143,13 @@ const contentTransition = {
 } as const
 
 const popupHeightsByTab = {
-	camera: 398,
-	particles: 356,
-	scene: 314,
-	lighting: 314,
-	bloom: 188,
-	color: 230,
-	renderer: 146,
+	camera: 398 + 44,
+	particles: 356 + 44,
+	scene: 314 + 44,
+	lighting: 314 + 44,
+	bloom: 188 + 44,
+	color: 230 + 44,
+	renderer: 146 + 44,
 } as const satisfies Record<TabId, number>
 
 const availableSectionIds = new Set(CONTROL_SECTIONS.map(section => section.id))
@@ -344,27 +344,33 @@ export default function ControlsPanel({ settings, onSettingsChange }: ControlsPa
 								exit={{ opacity: 0, filter: 'blur(12px)' }}
 								transition={contentFadeTransition}
 								className={activeContentClassName}>
-								{activeSection ? (
-									<div tabIndex={-1} className='h-full w-full overflow-y-auto px-3 py-3'>
-										<div className='space-y-1.5 pb-1.5'>
-											{activeSection.controls.map(control => (
-												<ControlRenderer
-													key={`${activeSection.id}-${control.label}`}
-													control={control}
-													settings={settings}
-													onChange={updateSetting}
-													onColorPickerActiveChange={handleColorPickerActiveChange}
-												/>
-											))}
+								<div className='flex h-full w-full flex-col'>
+									<header className='flex items-center shrink-0 border-b border-white/8 mx-3 px-1 py-4'>
+										<p className='text-xs leading-none text-neutral-300'>{activeTabConfig.label}</p>
+									</header>
+
+									{activeSection ? (
+										<div tabIndex={-1} className='h-full w-full flex-1 overflow-y-auto px-3 py-3'>
+											<div className='space-y-1.5 pb-1.5'>
+												{activeSection.controls.map(control => (
+													<ControlRenderer
+														key={`${activeSection.id}-${control.label}`}
+														control={control}
+														settings={settings}
+														onChange={updateSetting}
+														onColorPickerActiveChange={handleColorPickerActiveChange}
+													/>
+												))}
+											</div>
 										</div>
-									</div>
-								) : (
-									<div className='flex h-full w-full items-center justify-center px-4'>
-										<p className='text-xs leading-none font-semibold text-neutral-400'>
-											{activeTabConfig.label} Panel
-										</p>
-									</div>
-								)}
+									) : (
+										<div className='flex h-full w-full flex-1 items-center justify-center px-4'>
+											<p className='text-xs leading-none font-semibold text-neutral-400'>
+												{activeTabConfig.label} Panel
+											</p>
+										</div>
+									)}
+								</div>
 							</m.div>
 						</AnimatePresence>
 					</m.div>

@@ -63,7 +63,7 @@ export default function ColorControl({
 	return (
 		<div tabIndex={-1} className={cn('group relative h-9', className)} style={style}>
 			<div
-				className='absolute inset-0 overflow-hidden rounded-[10px] bg-black/80 flex items-center'
+				className='absolute inset-0 overflow-hidden rounded-[10px] bg-black/65 flex items-center'
 				style={{ WebkitTapHighlightColor: 'transparent' }}>
 				<span
 					className={cn(

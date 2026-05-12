@@ -7,7 +7,7 @@ import { forwardRef } from 'react'
 
 import { cn } from '@/src/lib/utils'
 
-type ButtonVariant = 'default'
+type ButtonVariant = 'default' | 'ghost'
 type ButtonSize = 'default' | 'icon'
 type BaseButtonProps = ComponentPropsWithoutRef<typeof BaseButton>
 const buttonScaleTransition = {
@@ -76,6 +76,8 @@ export default Button
 const variantStyles: Record<ButtonVariant, string> = {
 	default:
 		'border border-white/5 bg-neutral-800/50 text-neutral-400 hover:bg-neutral-800/75 hover:text-neutral-300 focus-visible:border-white/20 focus-visible:outline-none',
+	ghost:
+		'border border-white/5 bg-black/65 text-neutral-400 hover:bg-neutral-800/75 hover:text-neutral-300 focus-visible:border-white/20 focus-visible:outline-none',
 }
 
 const sizeStyles: Record<ButtonSize, string> = {

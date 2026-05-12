@@ -71,7 +71,7 @@ export function Toggle({
 	return (
 		<div className={cn('relative h-9', className)} style={style} {...props}>
 			<div
-				className='group absolute inset-0 overflow-hidden rounded-[10px] bg-black/80'
+				className='group absolute inset-0 overflow-hidden rounded-[10px] bg-black/65'
 				style={{ WebkitTapHighlightColor: 'transparent' }}>
 				<span
 					className={cn(
