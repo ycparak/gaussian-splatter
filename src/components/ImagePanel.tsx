@@ -154,7 +154,6 @@ export default function ImagePanel({
 				setGeneratedScenes(currentScenes => mergeGeneratedScene(currentScenes, scene))
 			})
 			onSceneSelect(scene)
-			setMessage(`Generated ${scene.name}.`)
 		},
 		[onSceneSelect]
 	)
