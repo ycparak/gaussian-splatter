@@ -7,7 +7,6 @@ import ImagePanel from '@/src/components/ImagePanel'
 import InfoPanel from '@/src/components/InfoPanel'
 import InfoButtons from '@/src/components/InfoButtons'
 import { defaultScene } from '@/src/engine/availableScenes'
-import { isUploadUiEnabled } from '@/src/engine/runtime'
 import { cloneSceneSettings, DEFAULT_SCENE_SETTINGS } from '@/src/engine/sceneSettings'
 import Three from '@/src/engine/Three'
 import { useRecordingSession } from '@/src/hooks/useRecordingSession'
@@ -46,7 +45,6 @@ export default function App() {
 	const [isScenePaused, setIsScenePaused] = useState(false)
 	const [isInfoOpen, setIsInfoOpen] = useState(false)
 	const [activeSceneId, setActiveSceneId] = useState<string | null>(defaultScene?.id ?? null)
-	const [sceneErrorMessage, setSceneErrorMessage] = useState<string | null>(null)
 	const [sceneSettings, setSceneSettings] = useState<SceneSettings>(() =>
 		cloneSceneSettings(DEFAULT_SCENE_SETTINGS)
 	)
@@ -81,7 +79,6 @@ export default function App() {
 	}, [])
 
 	const handleSceneSelect = useCallback((scene: SceneAsset) => {
-		setSceneErrorMessage(null)
 		setActiveSceneId(scene.id)
 		threeRef.current?.loadScene(scene)
 	}, [])
@@ -96,7 +93,6 @@ export default function App() {
 
 		const sceneLoadCallbacks: SceneLoadCallbacks = {
 			onLoadStart: asset => {
-				setSceneErrorMessage(null)
 				setActiveSceneId(asset.id)
 				if (!hasCompletedInitialLoadRef.current) {
 					setLoaderState({
@@ -118,7 +114,6 @@ export default function App() {
 				}
 			},
 			onLoadSuccess: _asset => {
-				setSceneErrorMessage(null)
 				setActiveSceneId(_asset.id)
 				hasCompletedInitialLoadRef.current = true
 				setLoaderState({
@@ -129,7 +124,6 @@ export default function App() {
 				})
 			},
 			onLoadError: (_asset, error) => {
-				setSceneErrorMessage(error.message)
 				if (!hasCompletedInitialLoadRef.current) {
 					setLoaderState({
 						visible: true,
@@ -197,12 +191,7 @@ export default function App() {
 
 					<ControlPanel settings={sceneSettings} onSettingsChange={setSceneSettings} />
 
-					<ImagePanel
-						activeSceneId={activeSceneId}
-						enableUploads={isUploadUiEnabled}
-						sceneErrorMessage={sceneErrorMessage}
-						onSceneSelect={handleSceneSelect}
-					/>
+					<ImagePanel activeSceneId={activeSceneId} onSceneSelect={handleSceneSelect} />
 				</m.div>
 
 				<AnimatePresence>
