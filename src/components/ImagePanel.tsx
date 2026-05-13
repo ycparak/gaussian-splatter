@@ -5,6 +5,7 @@ import {
 	type ChangeEvent,
 	type DragEvent,
 	type RefObject,
+	memo,
 	startTransition,
 	useCallback,
 	useEffect,
@@ -31,6 +32,15 @@ import { bundledScenes } from '@/src/engine/availableScenes'
 import { cn } from '@/src/lib/utils'
 
 const preferredSceneOrder = ['chapel', 'colosseum', 'modern', 'nousresearch', 'tokyo'] as const
+const preferredOrderIndex = new Map<string, number>(
+	preferredSceneOrder.map((id, index) => [id, index])
+)
+const activeJobStatuses = new Set<GenerationJobStatus>(['queued', 'running', 'optimizing'])
+const stageDurationByStatus: Record<Exclude<GenerationJobStatus, 'done' | 'error'>, number> = {
+	queued: 20,
+	running: 120,
+	optimizing: 35,
+}
 
 const compressionPercentBySceneId: Record<string, number> = {
 	chapel: 12,
@@ -72,24 +82,21 @@ export default function ImagePanel({
 	const [isDragging, setIsDragging] = useState(false)
 	const [message, setMessage] = useState('')
 	const [selectedFile, setSelectedFile] = useState<File | null>(null)
-	const [previewUrl, setPreviewUrl] = useState('')
 	const [job, setJob] = useState<GenerationJob | null>(null)
 	const [jobStartedAtMs, setJobStartedAtMs] = useState<number | null>(null)
 	const [nowMs, setNowMs] = useState(() => Date.now())
 	const [generatedScenes, setGeneratedScenes] = useState<GeneratedScene[]>([])
+	const previewUrl = useObjectUrl(selectedFile)
 	const fileInputRef = useRef<HTMLInputElement | null>(null)
 	const buttonRef = useRef<HTMLDivElement | null>(null)
 	const panelRef = useRef<HTMLDivElement | null>(null)
 	const dragDepthRef = useRef(0)
 	const jobPollControllerRef = useRef<AbortController | null>(null)
-	const isBusy =
-		job?.status === 'queued' || job?.status === 'running' || job?.status === 'optimizing'
+	const isBusy = jobStartedAtMs !== null || (job ? activeJobStatuses.has(job.status) : false)
+	const jobStatus = job?.status ?? null
 
 	const orderedScenes = useMemo(() => {
 		const sourceScenes = enableUploads ? [...bundledScenes, ...generatedScenes] : [...bundledScenes]
-		const preferredOrderIndex = new Map<string, number>(
-			preferredSceneOrder.map((id, index) => [id, index])
-		)
 
 		return sourceScenes.sort((left, right) => {
 			const leftOrder = preferredOrderIndex.get(left.id)
@@ -115,28 +122,13 @@ export default function ImagePanel({
 		setIsOpen(false)
 	}, [])
 
-	const refreshGeneratedScenes = useCallback(
-		async (options: { silent?: boolean } = {}) => {
-			if (!enableUploads) {
-				return
-			}
+	const handlePickClick = useCallback(() => {
+		fileInputRef.current?.click()
+	}, [])
 
-			try {
-				const scenes = await fetchGeneratedScenes()
-				startTransition(() => {
-					setGeneratedScenes(scenes)
-				})
-				if (!options.silent) {
-					setMessage('Image list refreshed.')
-				}
-			} catch (error) {
-				if (!options.silent) {
-					setMessage(error instanceof Error ? error.message : String(error))
-				}
-			}
-		},
-		[enableUploads]
-	)
+	const handleToggleOpen = useCallback(() => {
+		setIsOpen(currentOpen => !currentOpen)
+	}, [])
 
 	const followGenerationJob = useCallback(
 		async (initialJob: GenerationJob, signal: AbortSignal) => {
@@ -175,30 +167,30 @@ export default function ImagePanel({
 
 			const formData = new FormData()
 			formData.append('image', file)
-			let controller: AbortController | null = null
+			const controller = new AbortController()
 
 			try {
-				setMessage(`Uploading ${file.name}...`)
+				jobPollControllerRef.current?.abort()
+				jobPollControllerRef.current = controller
 				setJob(null)
 				setJobStartedAtMs(Date.now())
-				jobPollControllerRef.current?.abort()
-				controller = new AbortController()
-				jobPollControllerRef.current = controller
+				setMessage(`Uploading ${file.name}...`)
 
 				const nextJob = await createGenerationJob(formData, controller.signal)
 				setJob(nextJob)
 				setMessage(statusMessage(nextJob))
 				await followGenerationJob(nextJob, controller.signal)
 			} catch (error) {
-				if (!(error instanceof Error) || error.name !== 'AbortError') {
+				if (!isAbortError(error) && jobPollControllerRef.current === controller) {
+					setJob(null)
 					setMessage(error instanceof Error ? error.message : String(error))
 				}
 			} finally {
 				if (jobPollControllerRef.current === controller) {
 					jobPollControllerRef.current = null
+					setJobStartedAtMs(null)
+					setSelectedFile(null)
 				}
-				setJobStartedAtMs(null)
-				setSelectedFile(null)
 			}
 		},
 		[enableUploads, followGenerationJob]
@@ -235,39 +227,36 @@ export default function ImagePanel({
 	)
 
 	useEffect(() => {
-		if (!selectedFile) {
-			setPreviewUrl('')
-			return
-		}
-
-		const objectUrl = URL.createObjectURL(selectedFile)
-		setPreviewUrl(objectUrl)
-
-		return () => {
-			URL.revokeObjectURL(objectUrl)
-		}
-	}, [selectedFile])
-
-	useEffect(() => {
 		if (!enableUploads) {
 			jobPollControllerRef.current?.abort()
 			jobPollControllerRef.current = null
 			setIsDragging(false)
 			setMessage('')
 			setSelectedFile(null)
-			setPreviewUrl('')
 			setJobStartedAtMs(null)
 			setJob(null)
 			setGeneratedScenes([])
 			return undefined
 		}
 
-		void refreshGeneratedScenes({ silent: true })
+		const controller = new AbortController()
+		void fetchGeneratedScenes({ signal: controller.signal })
+			.then(scenes => {
+				startTransition(() => {
+					setGeneratedScenes(scenes)
+				})
+			})
+			.catch(error => {
+				if (!isAbortError(error)) {
+					setMessage(error instanceof Error ? error.message : String(error))
+				}
+			})
 
 		return () => {
+			controller.abort()
 			jobPollControllerRef.current?.abort()
 		}
-	}, [enableUploads, refreshGeneratedScenes])
+	}, [enableUploads])
 
 	useEffect(() => {
 		if (!isBusy) {
@@ -344,6 +333,16 @@ export default function ImagePanel({
 		[handlePickFile]
 	)
 
+	const estimatedTimeText = useMemo(
+		() =>
+			estimateTimeRemainingText({
+				status: jobStatus,
+				startedAtMs: jobStartedAtMs,
+				nowMs,
+			}),
+		[jobStartedAtMs, jobStatus, nowMs]
+	)
+
 	return (
 		<div className='pointer-events-none fixed inset-0 z-9 text-[12px] tracking-normal'>
 			<AnimatePresence>
@@ -362,16 +361,12 @@ export default function ImagePanel({
 								fileInputRef={fileInputRef}
 								isDragging={isDragging}
 								isBusy={isBusy}
-								status={job?.status ?? null}
+								status={jobStatus}
 								message={message}
 								previewUrl={previewUrl}
-								estimatedTimeText={estimateTimeRemainingText({
-									status: job?.status ?? null,
-									startedAtMs: jobStartedAtMs,
-									nowMs,
-								})}
+								estimatedTimeText={estimatedTimeText}
 								onInputChange={handleInputChange}
-								onPickClick={() => fileInputRef.current?.click()}
+								onPickClick={handlePickClick}
 								onDragEnter={handleDragEnter}
 								onDragOver={handleDragOver}
 								onDragLeave={handleDragLeave}
@@ -403,7 +398,7 @@ export default function ImagePanel({
 							className={cn('size-4 transition-transform duration-150', isOpen && '-rotate-90')}
 						/>
 					}
-					onClick={() => setIsOpen(currentOpen => !currentOpen)}
+					onClick={handleToggleOpen}
 					className={cn(
 						'h-9 gap-1.5 pr-4 pl-2 text-neutral-400 shadow-xl shadow-black/25 hover:text-neutral-300',
 						isOpen && 'bg-neutral-800/65 text-neutral-300'
@@ -495,7 +490,7 @@ function UploadPanel({
 									Generating point cloud with ML SHARP
 								</p>
 							</div>
-							<p className='truncate pl-[18px] text-[11px] leading-4 text-neutral-400 [font-variant-numeric:tabular-nums]'>
+							<p className='truncate pl-4.5 text-[11px] leading-4 text-neutral-400 [font-variant-numeric:tabular-nums]'>
 								{estimatedTimeText}
 							</p>
 						</div>
@@ -536,12 +531,6 @@ function estimateTimeRemainingText({
 	}
 
 	const elapsedSeconds = Math.max(1, Math.floor((nowMs - startedAtMs) / 1000))
-	const stageDurationByStatus: Record<Exclude<GenerationJobStatus, 'done' | 'error'>, number> = {
-		queued: 20,
-		running: 120,
-		optimizing: 35,
-	}
-
 	let remainingSeconds = 0
 	if (status === 'queued') {
 		remainingSeconds = Math.max(5, stageDurationByStatus.queued - elapsedSeconds)
@@ -567,7 +556,33 @@ function estimateTimeRemainingText({
 	return `~${minutes}:${String(seconds).padStart(2, '0')} remaining`
 }
 
-function ImageListItem({
+function useObjectUrl(file: File | null) {
+	const [objectUrl, setObjectUrl] = useState('')
+
+	useEffect(() => {
+		if (!file) {
+			setObjectUrl('')
+			return
+		}
+
+		const nextObjectUrl = URL.createObjectURL(file)
+		setObjectUrl(nextObjectUrl)
+
+		return () => {
+			URL.revokeObjectURL(nextObjectUrl)
+		}
+	}, [file])
+
+	return objectUrl
+}
+
+function isAbortError(error: unknown) {
+	return (
+		typeof error === 'object' && error !== null && 'name' in error && error.name === 'AbortError'
+	)
+}
+
+const ImageListItem = memo(function ImageListItem({
 	scene,
 	isActive,
 	onSceneSelect,
@@ -579,13 +594,16 @@ function ImageListItem({
 	const compressionPercent =
 		compressionPercentBySceneId[scene.id] ??
 		(typeof scene.ratio === 'number' ? Math.max(1, Math.round(scene.ratio * 100)) : null)
+	const handleSceneSelect = useCallback(() => {
+		onSceneSelect(scene)
+	}, [onSceneSelect, scene])
 
 	return (
 		<li className='flex items-center border-white/5 border-t first:border-t-0'>
 			<button
 				type='button'
 				aria-current={isActive ? 'true' : undefined}
-				onClick={() => onSceneSelect(scene)}
+				onClick={handleSceneSelect}
 				className={cn(
 					'group flex h-10 w-full items-center gap-3 px-4 text-left transition-colors duration-200 outline-none focus-visible:outline-none',
 					isActive ? 'bg-white/5' : 'hover:bg-white/5'
@@ -611,4 +629,4 @@ function ImageListItem({
 			</button>
 		</li>
 	)
-}
+})
