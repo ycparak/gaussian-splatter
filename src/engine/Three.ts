@@ -86,7 +86,7 @@ export default class Three {
 
 	loadScene(asset: SceneAsset): void {
 		this.elapsedTime = 0;
-		this.scene?.loadAsset(asset);
+		this.scene?.loadAsset(asset, { force: this.isPaused });
 	}
 
 	reloadScene(): void {
