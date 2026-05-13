@@ -7,6 +7,7 @@ import ImagePanel from '@/src/components/ImagePanel'
 import InfoPanel from '@/src/components/InfoPanel'
 import InfoButtons from '@/src/components/InfoButtons'
 import { defaultScene } from '@/src/engine/availableScenes'
+import { isUploadUiEnabled } from '@/src/engine/runtime'
 import { cloneSceneSettings, DEFAULT_SCENE_SETTINGS } from '@/src/engine/sceneSettings'
 import Three from '@/src/engine/Three'
 import { useRecordingSession } from '@/src/hooks/useRecordingSession'
@@ -191,7 +192,11 @@ export default function App() {
 
 					<ControlPanel settings={sceneSettings} onSettingsChange={setSceneSettings} />
 
-					<ImagePanel activeSceneId={activeSceneId} onSceneSelect={handleSceneSelect} />
+					<ImagePanel
+						activeSceneId={activeSceneId}
+						enableUploads={isUploadUiEnabled}
+						onSceneSelect={handleSceneSelect}
+					/>
 				</m.div>
 
 				<AnimatePresence>
