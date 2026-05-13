@@ -43,6 +43,12 @@ const compressionPercentBySceneId: Record<string, number> = {
 	'temple-neptune': 13,
 }
 
+const islandTransition = {
+	type: 'spring',
+	bounce: 0.18,
+	duration: 0.44,
+} as const
+
 interface ImagePanelProps {
 	activeSceneId: string | null
 	enableUploads: boolean
@@ -65,7 +71,11 @@ export default function ImagePanel({
 	const [isOpen, setIsOpen] = useState(shouldStartOpen)
 	const [isDragging, setIsDragging] = useState(false)
 	const [message, setMessage] = useState('')
+	const [selectedFile, setSelectedFile] = useState<File | null>(null)
+	const [previewUrl, setPreviewUrl] = useState('')
 	const [job, setJob] = useState<GenerationJob | null>(null)
+	const [jobStartedAtMs, setJobStartedAtMs] = useState<number | null>(null)
+	const [nowMs, setNowMs] = useState(() => Date.now())
 	const [generatedScenes, setGeneratedScenes] = useState<GeneratedScene[]>([])
 	const fileInputRef = useRef<HTMLInputElement | null>(null)
 	const buttonRef = useRef<HTMLDivElement | null>(null)
@@ -170,6 +180,7 @@ export default function ImagePanel({
 			try {
 				setMessage(`Uploading ${file.name}...`)
 				setJob(null)
+				setJobStartedAtMs(Date.now())
 				jobPollControllerRef.current?.abort()
 				controller = new AbortController()
 				jobPollControllerRef.current = controller
@@ -186,6 +197,8 @@ export default function ImagePanel({
 				if (jobPollControllerRef.current === controller) {
 					jobPollControllerRef.current = null
 				}
+				setJobStartedAtMs(null)
+				setSelectedFile(null)
 			}
 		},
 		[enableUploads, followGenerationJob]
@@ -197,14 +210,20 @@ export default function ImagePanel({
 				return
 			}
 
+			if (isBusy) {
+				setMessage('Generation already in progress.')
+				return
+			}
+
 			if (!file.type.startsWith('image/')) {
 				setMessage('Choose an image file.')
 				return
 			}
 
+			setSelectedFile(file)
 			void generateFromFile(file)
 		},
-		[enableUploads, generateFromFile]
+		[enableUploads, generateFromFile, isBusy]
 	)
 
 	const handleInputChange = useCallback(
@@ -216,11 +235,28 @@ export default function ImagePanel({
 	)
 
 	useEffect(() => {
+		if (!selectedFile) {
+			setPreviewUrl('')
+			return
+		}
+
+		const objectUrl = URL.createObjectURL(selectedFile)
+		setPreviewUrl(objectUrl)
+
+		return () => {
+			URL.revokeObjectURL(objectUrl)
+		}
+	}, [selectedFile])
+
+	useEffect(() => {
 		if (!enableUploads) {
 			jobPollControllerRef.current?.abort()
 			jobPollControllerRef.current = null
 			setIsDragging(false)
 			setMessage('')
+			setSelectedFile(null)
+			setPreviewUrl('')
+			setJobStartedAtMs(null)
 			setJob(null)
 			setGeneratedScenes([])
 			return undefined
@@ -232,6 +268,20 @@ export default function ImagePanel({
 			jobPollControllerRef.current?.abort()
 		}
 	}, [enableUploads, refreshGeneratedScenes])
+
+	useEffect(() => {
+		if (!isBusy) {
+			return undefined
+		}
+
+		const intervalId = window.setInterval(() => {
+			setNowMs(Date.now())
+		}, 1000)
+
+		return () => {
+			window.clearInterval(intervalId)
+		}
+	}, [isBusy])
 
 	useEffect(() => {
 		if (!isOpen) {
@@ -305,16 +355,21 @@ export default function ImagePanel({
 						aria-label='Image scenes'
 						initial={false}
 						animate={{ opacity: 1 }}
-						exit={{ opacity: 0 }}
-						transition={{ duration: 0.24, ease: 'easeOut' }}
+						exit={{ opacity: 0, transition: { duration: 0.24, ease: 'easeOut' } }}
 						className='pointer-events-auto fixed right-5 bottom-16 z-10 flex w-75.5 flex-col gap-1.5'>
 						{enableUploads ? (
 							<UploadPanel
 								fileInputRef={fileInputRef}
 								isDragging={isDragging}
 								isBusy={isBusy}
-								message={message}
 								status={job?.status ?? null}
+								message={message}
+								previewUrl={previewUrl}
+								estimatedTimeText={estimateTimeRemainingText({
+									status: job?.status ?? null,
+									startedAtMs: jobStartedAtMs,
+									nowMs,
+								})}
 								onInputChange={handleInputChange}
 								onPickClick={() => fileInputRef.current?.click()}
 								onDragEnter={handleDragEnter}
@@ -364,8 +419,10 @@ function UploadPanel({
 	fileInputRef,
 	isDragging,
 	isBusy,
-	message,
 	status,
+	message,
+	previewUrl,
+	estimatedTimeText,
 	onInputChange,
 	onPickClick,
 	onDragEnter,
@@ -376,8 +433,10 @@ function UploadPanel({
 	fileInputRef: RefObject<HTMLInputElement | null>
 	isDragging: boolean
 	isBusy: boolean
-	message: string
 	status: GenerationJobStatus | null
+	message: string
+	previewUrl: string
+	estimatedTimeText: string
 	onInputChange: (event: ChangeEvent<HTMLInputElement>) => void
 	onPickClick: () => void
 	onDragEnter: (event: DragEvent<HTMLButtonElement>) => void
@@ -398,41 +457,114 @@ function UploadPanel({
 				onChange={onInputChange}
 			/>
 
-			<button
+			<m.button
 				type='button'
+				disabled={isBusy}
 				aria-label='Upload image to generate a scene'
 				onClick={onPickClick}
 				onDragEnter={onDragEnter}
 				onDragOver={onDragOver}
 				onDragLeave={onDragLeave}
 				onDrop={onDrop}
+				animate={{ height: isBusy ? 200 : 144 }}
+				transition={{ height: isBusy ? islandTransition : { duration: 0 } }}
 				className={cn(
-					'group relative flex h-36 w-full flex-col items-center justify-center gap-2.5 overflow-hidden rounded-2xl border border-white/10 bg-neutral-900/65 px-4 text-center text-neutral-400 backdrop-blur-[10px] transition-colors duration-200',
-					isDragging ? 'bg-cyan-400/10 ring-1 ring-cyan-300/70' : 'hover:bg-neutral-900/75'
+					'group relative flex w-full flex-col overflow-hidden rounded-2xl border border-white/10 bg-neutral-900/65 text-neutral-400 backdrop-blur-[10px] transition-colors duration-200',
+					isDragging
+						? 'bg-cyan-400/10 ring-1 ring-cyan-300/70'
+						: isBusy
+							? ''
+							: 'hover:bg-neutral-900/75'
 				)}>
-				{isBusy ? (
-					<span
-						className='size-4 rounded-full border-2 border-current border-t-transparent animate-spin'
-						aria-hidden='true'
-					/>
+				{isBusy && previewUrl ? (
+					<div className='flex h-full min-h-0 flex-col'>
+						<img src={previewUrl} alt='' className='min-h-0 w-full flex-1 object-cover' />
+						<div className='px-4 pt-4 pb-4 text-left'>
+							<div className='flex items-center gap-3'>
+								<m.span
+									aria-hidden='true'
+									className='size-1.5 shrink-0 rounded-full bg-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.75)]'
+									animate={{ opacity: [1, 0.35, 1] }}
+									transition={{
+										duration: 1.1,
+										ease: 'easeInOut',
+										repeat: Number.POSITIVE_INFINITY,
+									}}
+								/>
+								<p className='truncate text-xs leading-4 font-semibold text-neutral-300'>
+									Generating point cloud with ML SHARP
+								</p>
+							</div>
+							<p className='truncate pl-[18px] text-[11px] leading-4 text-neutral-400 [font-variant-numeric:tabular-nums]'>
+								{estimatedTimeText}
+							</p>
+						</div>
+					</div>
 				) : (
-					<UploadIcon className='size-5 text-current' aria-hidden='true' />
+					<div className='flex h-full flex-col items-center justify-center gap-2.5 px-4 text-center'>
+						<UploadIcon className='size-5 text-current' aria-hidden='true' />
+						<span className='text-xs leading-4 font-semibold text-current'>
+							Drop image or drag to upload
+						</span>
+						{showStatus ? (
+							<span
+								className={cn(
+									'max-w-full truncate text-[11px] leading-4',
+									isError ? 'text-red-300' : 'text-neutral-500 group-hover:text-neutral-400'
+								)}>
+								{message}
+							</span>
+						) : null}
+					</div>
 				)}
-				<span className='text-xs leading-4 font-semibold text-current'>
-					Drop image or drag to upload
-				</span>
-				{showStatus ? (
-					<span
-						className={cn(
-							'max-w-full truncate text-[11px] leading-4',
-							isError ? 'text-red-300' : 'text-neutral-500 group-hover:text-neutral-400'
-						)}>
-						{message}
-					</span>
-				) : null}
-			</button>
+			</m.button>
 		</>
 	)
+}
+
+function estimateTimeRemainingText({
+	status,
+	startedAtMs,
+	nowMs,
+}: {
+	status: GenerationJobStatus | null
+	startedAtMs: number | null
+	nowMs: number
+}) {
+	if (!status || !startedAtMs) {
+		return '~Estimating remaining time'
+	}
+
+	const elapsedSeconds = Math.max(1, Math.floor((nowMs - startedAtMs) / 1000))
+	const stageDurationByStatus: Record<Exclude<GenerationJobStatus, 'done' | 'error'>, number> = {
+		queued: 20,
+		running: 120,
+		optimizing: 35,
+	}
+
+	let remainingSeconds = 0
+	if (status === 'queued') {
+		remainingSeconds = Math.max(5, stageDurationByStatus.queued - elapsedSeconds)
+	} else if (status === 'running') {
+		remainingSeconds = Math.max(
+			8,
+			stageDurationByStatus.queued + stageDurationByStatus.running - elapsedSeconds
+		)
+	} else if (status === 'optimizing') {
+		remainingSeconds = Math.max(
+			3,
+			stageDurationByStatus.queued +
+				stageDurationByStatus.running +
+				stageDurationByStatus.optimizing -
+				elapsedSeconds
+		)
+	} else {
+		remainingSeconds = 0
+	}
+
+	const minutes = Math.floor(remainingSeconds / 60)
+	const seconds = remainingSeconds % 60
+	return `~${minutes}:${String(seconds).padStart(2, '0')} remaining`
 }
 
 function ImageListItem({
@@ -472,8 +604,8 @@ function ImageListItem({
 					{scene.name}
 				</span>
 				{compressionPercent !== null ? (
-					<span className='shrink-0 text-[11px] leading-3 text-neutral-400'>
-						{compressionPercent}%
+					<span className='shrink-0 text-[11px] leading-3 text-neutral-400 [font-variant-numeric:tabular-nums]'>
+						{compressionPercent}% of PLY
 					</span>
 				) : null}
 			</button>
