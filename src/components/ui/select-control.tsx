@@ -132,6 +132,7 @@ export default function SelectControl({
 	return (
 		<div className={cn('relative h-9', className)} style={style}>
 			<button
+				tabIndex={-1}
 				type='button'
 				ref={triggerRef}
 				onClick={() => setIsOpen(open => !open)}
@@ -205,6 +206,7 @@ export default function SelectControl({
 
 										return (
 											<button
+												tabIndex={-1}
 												key={option.value}
 												type='button'
 												onClick={() => {
