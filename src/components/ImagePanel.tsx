@@ -510,7 +510,7 @@ function UploadPanel({
 						</div>
 					</div>
 				) : (
-					<div className='flex h-full flex-col items-center justify-center gap-2.5 px-4 text-center'>
+					<div className='flex h-full flex-col items-center justify-center gap-2.5 px-4 text-center cursor-pointer'>
 						{isDisabledUploadPanel ? (
 							<GithubIcon className='size-5 text-current' aria-hidden='true' />
 						) : (
@@ -518,7 +518,7 @@ function UploadPanel({
 						)}
 						<span className='text-xs leading-4 font-semibold text-current'>
 							{isDisabledUploadPanel
-								? 'Download locally to upload images'
+								? 'Download to generate your own splats'
 								: 'Drop image or drag to upload'}
 						</span>
 						{showStatus ? (
