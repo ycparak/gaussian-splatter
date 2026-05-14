@@ -31,7 +31,7 @@ import {
 import { bundledScenes } from '@/src/engine/availableScenes'
 import { cn } from '@/src/lib/utils'
 
-const preferredSceneOrder = ['chapel', 'colosseum', 'modern', 'nousresearch', 'tokyo'] as const
+const preferredSceneOrder = ['Chapel', 'Colosseum', 'Modern', 'Nousresearch', 'Tokyo'] as const
 const preferredOrderIndex = new Map<string, number>(
 	preferredSceneOrder.map((id, index) => [id, index])
 )
@@ -43,14 +43,11 @@ const stageDurationByStatus: Record<Exclude<GenerationJobStatus, 'done' | 'error
 }
 
 const compressionPercentBySceneId: Record<string, number> = {
-	chapel: 12,
-	colosseum: 11,
-	modern: 13,
-	nousresearch: 12,
-	tokyo: 11,
-	columns: 13,
-	window: 11,
-	'temple-neptune': 13,
+	Chapel: 12,
+	Colosseum: 11,
+	Modern: 13,
+	Nousresearch: 12,
+	Tokyo: 11,
 }
 
 const islandTransition = {
@@ -444,6 +441,7 @@ function UploadPanel({
 	return (
 		<>
 			<input
+				tabIndex={-1}
 				ref={fileInputRef}
 				type='file'
 				accept='image/*'
@@ -452,6 +450,7 @@ function UploadPanel({
 			/>
 
 			<m.button
+				tabIndex={-1}
 				type='button'
 				disabled={isBusy}
 				aria-label='Upload image to generate a scene'
@@ -600,6 +599,7 @@ const ImageListItem = memo(function ImageListItem({
 	return (
 		<li className='flex items-center border-white/5 border-t first:border-t-0'>
 			<button
+				tabIndex={-1}
 				type='button'
 				aria-current={isActive ? 'true' : undefined}
 				onClick={handleSceneSelect}

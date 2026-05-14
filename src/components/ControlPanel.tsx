@@ -270,12 +270,36 @@ export default function ControlsPanel({ settings, onSettingsChange }: ControlsPa
 			}
 		}
 
+		function handleDocumentFocusIn(event: FocusEvent) {
+			const target = event.target
+
+			if (!(target instanceof Node)) {
+				return
+			}
+
+			if (rootRef.current?.contains(target) || popupRef.current?.contains(target)) {
+				return
+			}
+
+			if (target instanceof Element && target.closest('[data-controls-select-dropdown]')) {
+				return
+			}
+
+			if (isColorPickerActiveRef.current) {
+				return
+			}
+
+			closePanel()
+		}
+
 		document.addEventListener('pointerdown', handleDocumentPointerDown, true)
 		document.addEventListener('keydown', handleDocumentKeyDown)
+		document.addEventListener('focusin', handleDocumentFocusIn)
 
 		return () => {
 			document.removeEventListener('pointerdown', handleDocumentPointerDown, true)
 			document.removeEventListener('keydown', handleDocumentKeyDown)
+			document.removeEventListener('focusin', handleDocumentFocusIn)
 		}
 	}, [activeTab, closePanel])
 
@@ -380,6 +404,7 @@ export default function ControlsPanel({ settings, onSettingsChange }: ControlsPa
 									<header className='mx-3 shrink-0 py-3'>
 										<div className='grid w-full grid-cols-2 gap-1.5'>
 											<Button
+												tabIndex={-1}
 												variant='ghost'
 												className='w-full border-white/8 bg-black/50 text-neutral-300 hover:bg-neutral-800/75 hover:text-neutral-200'
 												icon={<RandomIcon className='size-4' />}
@@ -388,6 +413,7 @@ export default function ControlsPanel({ settings, onSettingsChange }: ControlsPa
 												Randomise
 											</Button>
 											<Button
+												tabIndex={-1}
 												variant='ghost'
 												className='w-full border-white/8 bg-black/50 text-neutral-300 hover:bg-neutral-800/75 hover:text-neutral-200'
 												icon={<ResetIcon className='size-4' />}
