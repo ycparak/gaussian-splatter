@@ -18,6 +18,7 @@ import { abortableWait } from '@/shared/abortableWait'
 import { mergeGeneratedScene } from '@/shared/generatedScenes'
 import type { GeneratedScene, GenerationJob, GenerationJobStatus, SceneAsset } from '@/shared/types'
 import { ChevronRightIcon } from '@/src/components/icons/chevron-right'
+import { GithubIcon } from '@/src/components/icons/github'
 import { UploadIcon } from '@/src/components/icons/upload'
 import Button from '@/src/components/ui/button'
 import {
@@ -352,23 +353,22 @@ export default function ImagePanel({
 						animate={{ opacity: 1 }}
 						exit={{ opacity: 0, transition: { duration: 0.24, ease: 'easeOut' } }}
 						className='pointer-events-auto fixed right-5 bottom-16 z-10 flex w-75.5 flex-col gap-1.5'>
-						{enableUploads ? (
-							<UploadPanel
-								fileInputRef={fileInputRef}
-								isDragging={isDragging}
-								isBusy={isBusy}
-								status={jobStatus}
-								message={message}
-								previewUrl={previewUrl}
-								estimatedTimeText={estimatedTimeText}
-								onInputChange={handleInputChange}
-								onPickClick={handlePickClick}
-								onDragEnter={handleDragEnter}
-								onDragOver={handleDragOver}
-								onDragLeave={handleDragLeave}
-								onDrop={handleDrop}
-							/>
-						) : null}
+						<UploadPanel
+							enableUploads={enableUploads}
+							fileInputRef={fileInputRef}
+							isDragging={isDragging}
+							isBusy={isBusy}
+							status={jobStatus}
+							message={message}
+							previewUrl={previewUrl}
+							estimatedTimeText={estimatedTimeText}
+							onInputChange={handleInputChange}
+							onPickClick={handlePickClick}
+							onDragEnter={handleDragEnter}
+							onDragOver={handleDragOver}
+							onDragLeave={handleDragLeave}
+							onDrop={handleDrop}
+						/>
 
 						<ul className='overflow-hidden rounded-2xl border border-white/10 bg-neutral-900/65 p-0 backdrop-blur-[10px]'>
 							{orderedScenes.map(scene => (
@@ -407,6 +407,7 @@ export default function ImagePanel({
 }
 
 function UploadPanel({
+	enableUploads,
 	fileInputRef,
 	isDragging,
 	isBusy,
@@ -421,6 +422,7 @@ function UploadPanel({
 	onDragLeave,
 	onDrop,
 }: {
+	enableUploads: boolean
 	fileInputRef: RefObject<HTMLInputElement | null>
 	isDragging: boolean
 	isBusy: boolean
@@ -437,28 +439,42 @@ function UploadPanel({
 }) {
 	const showStatus = message.length > 0
 	const isError = status === 'error'
+	const isDisabledUploadPanel = !enableUploads
+	const productionUploadCtaHref = 'https://github.com/ycparak/gaussian-splatter'
 
 	return (
 		<>
-			<input
-				tabIndex={-1}
-				ref={fileInputRef}
-				type='file'
-				accept='image/*'
-				className='hidden'
-				onChange={onInputChange}
-			/>
+			{enableUploads ? (
+				<input
+					tabIndex={-1}
+					ref={fileInputRef}
+					type='file'
+					accept='image/*'
+					className='hidden'
+					onChange={onInputChange}
+				/>
+			) : null}
 
 			<m.button
 				tabIndex={-1}
 				type='button'
 				disabled={isBusy}
-				aria-label='Upload image to generate a scene'
-				onClick={onPickClick}
-				onDragEnter={onDragEnter}
-				onDragOver={onDragOver}
-				onDragLeave={onDragLeave}
-				onDrop={onDrop}
+				aria-label={
+					isDisabledUploadPanel
+						? 'Open GitHub repository to download locally for image uploads'
+						: 'Upload image to generate a scene'
+				}
+				onClick={
+					isDisabledUploadPanel
+						? () => {
+								window.open(productionUploadCtaHref, '_blank', 'noopener,noreferrer')
+							}
+						: onPickClick
+				}
+				onDragEnter={isDisabledUploadPanel ? undefined : onDragEnter}
+				onDragOver={isDisabledUploadPanel ? undefined : onDragOver}
+				onDragLeave={isDisabledUploadPanel ? undefined : onDragLeave}
+				onDrop={isDisabledUploadPanel ? undefined : onDrop}
 				animate={{ height: isBusy ? 200 : 144 }}
 				transition={{ height: isBusy ? islandTransition : { duration: 0 } }}
 				className={cn(
@@ -495,9 +511,15 @@ function UploadPanel({
 					</div>
 				) : (
 					<div className='flex h-full flex-col items-center justify-center gap-2.5 px-4 text-center'>
-						<UploadIcon className='size-5 text-current' aria-hidden='true' />
+						{isDisabledUploadPanel ? (
+							<GithubIcon className='size-5 text-current' aria-hidden='true' />
+						) : (
+							<UploadIcon className='size-5 text-current' aria-hidden='true' />
+						)}
 						<span className='text-xs leading-4 font-semibold text-current'>
-							Drop image or drag to upload
+							{isDisabledUploadPanel
+								? 'Download locally to upload images'
+								: 'Drop image or drag to upload'}
 						</span>
 						{showStatus ? (
 							<span
