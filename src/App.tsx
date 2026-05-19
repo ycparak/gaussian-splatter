@@ -8,7 +8,8 @@ import InfoPanel from '@/src/components/InfoPanel'
 import InfoButtons from '@/src/components/InfoButtons'
 import { defaultScene } from '@/src/engine/availableScenes'
 import { isUploadUiEnabled } from '@/src/engine/runtime'
-import { cloneSceneSettings, DEFAULT_SCENE_SETTINGS } from '@/src/engine/sceneSettings'
+import { resolveSceneSettingsPreset } from '@/src/engine/scenePresets'
+import { cloneSceneSettings } from '@/src/engine/sceneSettings'
 import Three from '@/src/engine/Three'
 import { useRecordingSession } from '@/src/hooks/useRecordingSession'
 
@@ -17,6 +18,137 @@ interface LoaderState {
 	progress: number
 	phase: 'idle' | 'loading' | 'loaded' | 'error'
 	message: string | null
+}
+
+const lerp = (start: number, end: number, progress: number) => start + (end - start) * progress
+
+function parseHexColor(value: string): [number, number, number] | null {
+	const normalized = value.trim()
+	if (!normalized.startsWith('#')) return null
+
+	const hex = normalized.slice(1)
+	if (hex.length === 3) {
+		const [r, g, b] = hex.split('')
+		if (!r || !g || !b) return null
+		const rr = Number.parseInt(r + r, 16)
+		const gg = Number.parseInt(g + g, 16)
+		const bb = Number.parseInt(b + b, 16)
+		return Number.isNaN(rr) || Number.isNaN(gg) || Number.isNaN(bb) ? null : [rr, gg, bb]
+	}
+
+	if (hex.length === 6) {
+		const rr = Number.parseInt(hex.slice(0, 2), 16)
+		const gg = Number.parseInt(hex.slice(2, 4), 16)
+		const bb = Number.parseInt(hex.slice(4, 6), 16)
+		return Number.isNaN(rr) || Number.isNaN(gg) || Number.isNaN(bb) ? null : [rr, gg, bb]
+	}
+
+	return null
+}
+
+function toHexColor([r, g, b]: [number, number, number]): string {
+	const toHex = (value: number) => Math.round(value).toString(16).padStart(2, '0')
+	return `#${toHex(r)}${toHex(g)}${toHex(b)}`
+}
+
+function lerpColor(start: string, end: string, progress: number): string {
+	const from = parseHexColor(start)
+	const to = parseHexColor(end)
+	if (!from || !to) {
+		return progress < 1 ? start : end
+	}
+
+	return toHexColor([
+		lerp(from[0], to[0], progress),
+		lerp(from[1], to[1], progress),
+		lerp(from[2], to[2], progress),
+	])
+}
+
+function interpolateSceneSettings(
+	start: SceneSettings,
+	end: SceneSettings,
+	progress: number
+): SceneSettings {
+	const clamped = Math.max(0, Math.min(1, progress))
+	const isComplete = clamped >= 1
+
+	return {
+		particles: {
+			size: lerp(start.particles.size, end.particles.size, clamped),
+			flowFieldInfluence: lerp(
+				start.particles.flowFieldInfluence,
+				end.particles.flowFieldInfluence,
+				clamped
+			),
+			flowFieldStrength: lerp(
+				start.particles.flowFieldStrength,
+				end.particles.flowFieldStrength,
+				clamped
+			),
+			flowFieldFrequency: lerp(
+				start.particles.flowFieldFrequency,
+				end.particles.flowFieldFrequency,
+				clamped
+			),
+			timeScale: lerp(start.particles.timeScale, end.particles.timeScale, clamped),
+			decayRate: lerp(start.particles.decayRate, end.particles.decayRate, clamped),
+			returnForce: lerp(start.particles.returnForce, end.particles.returnForce, clamped),
+			morphDuration: lerp(start.particles.morphDuration, end.particles.morphDuration, clamped),
+		},
+		scene: {
+			background: lerpColor(start.scene.background, end.scene.background, clamped),
+			fogEnabled: isComplete ? end.scene.fogEnabled : start.scene.fogEnabled,
+			fogColor: lerpColor(start.scene.fogColor, end.scene.fogColor, clamped),
+			fogNear: lerp(start.scene.fogNear, end.scene.fogNear, clamped),
+			fogFar: lerp(start.scene.fogFar, end.scene.fogFar, clamped),
+			pointRotationX: lerp(start.scene.pointRotationX, end.scene.pointRotationX, clamped),
+			scale: lerp(start.scene.scale, end.scene.scale, clamped),
+		},
+		lighting: {
+			directionX: lerp(start.lighting.directionX, end.lighting.directionX, clamped),
+			directionY: lerp(start.lighting.directionY, end.lighting.directionY, clamped),
+			directionZ: lerp(start.lighting.directionZ, end.lighting.directionZ, clamped),
+			ambient: lerp(start.lighting.ambient, end.lighting.ambient, clamped),
+			diffuse: lerp(start.lighting.diffuse, end.lighting.diffuse, clamped),
+			specular: lerp(start.lighting.specular, end.lighting.specular, clamped),
+			shininess: lerp(start.lighting.shininess, end.lighting.shininess, clamped),
+		},
+		bloom: {
+			enabled: isComplete ? end.bloom.enabled : start.bloom.enabled,
+			strength: lerp(start.bloom.strength, end.bloom.strength, clamped),
+			radius: lerp(start.bloom.radius, end.bloom.radius, clamped),
+			threshold: lerp(start.bloom.threshold, end.bloom.threshold, clamped),
+		},
+		color: {
+			brightness: lerp(start.color.brightness, end.color.brightness, clamped),
+			contrast: lerp(start.color.contrast, end.color.contrast, clamped),
+			saturation: lerp(start.color.saturation, end.color.saturation, clamped),
+			tintColor: lerpColor(start.color.tintColor, end.color.tintColor, clamped),
+			tintStrength: lerp(start.color.tintStrength, end.color.tintStrength, clamped),
+		},
+		camera: {
+			fov: lerp(start.camera.fov, end.camera.fov, clamped),
+			z: lerp(start.camera.z, end.camera.z, clamped),
+			targetX: lerp(start.camera.targetX, end.camera.targetX, clamped),
+			targetY: lerp(start.camera.targetY, end.camera.targetY, clamped),
+			targetZ: lerp(start.camera.targetZ, end.camera.targetZ, clamped),
+			damping: lerp(start.camera.damping, end.camera.damping, clamped),
+			xMin: lerp(start.camera.xMin, end.camera.xMin, clamped),
+			xMax: lerp(start.camera.xMax, end.camera.xMax, clamped),
+			yMin: lerp(start.camera.yMin, end.camera.yMin, clamped),
+			yMax: lerp(start.camera.yMax, end.camera.yMax, clamped),
+			bobAmplitude: lerp(start.camera.bobAmplitude, end.camera.bobAmplitude, clamped),
+			bobSpeed: lerp(start.camera.bobSpeed, end.camera.bobSpeed, clamped),
+			rollAmplitude: lerp(start.camera.rollAmplitude, end.camera.rollAmplitude, clamped),
+		},
+		renderer: {
+			pixelRatioCap: lerp(start.renderer.pixelRatioCap, end.renderer.pixelRatioCap, clamped),
+			antialias: isComplete ? end.renderer.antialias : start.renderer.antialias,
+			toneMapping: isComplete ? end.renderer.toneMapping : start.renderer.toneMapping,
+			exposure: lerp(start.renderer.exposure, end.renderer.exposure, clamped),
+		},
+	}
 }
 
 const INITIAL_LOADER_STATE: LoaderState = defaultScene
@@ -37,17 +169,21 @@ const interfaceTransition = {
 	duration: 0.75,
 	ease: [0.23, 1, 0.32, 1],
 } as const
+const INITIAL_SCENE_SETTINGS = resolveSceneSettingsPreset(defaultScene)
 
 export default function App() {
 	const containerRef = useRef<HTMLDivElement | null>(null)
 	const threeRef = useRef<Three | null>(null)
 	const hasCompletedInitialLoadRef = useRef(!defaultScene)
+	const pendingScenePresetRef = useRef<{ sceneId: string; settings: SceneSettings } | null>(null)
+	const sceneSettingsRef = useRef<SceneSettings>(cloneSceneSettings(INITIAL_SCENE_SETTINGS))
+	const settingsAnimationFrameRef = useRef<number | null>(null)
 	const [loaderState, setLoaderState] = useState<LoaderState>(INITIAL_LOADER_STATE)
 	const [isScenePaused, setIsScenePaused] = useState(false)
 	const [isInfoOpen, setIsInfoOpen] = useState(false)
 	const [activeSceneId, setActiveSceneId] = useState<string | null>(defaultScene?.id ?? null)
 	const [sceneSettings, setSceneSettings] = useState<SceneSettings>(() =>
-		cloneSceneSettings(DEFAULT_SCENE_SETTINGS)
+		cloneSceneSettings(INITIAL_SCENE_SETTINGS)
 	)
 	const recordingSession = useRecordingSession(threeRef)
 	const {
@@ -79,10 +215,61 @@ export default function App() {
 		threeRef.current?.setInfoVisible(false)
 	}, [])
 
-	const handleSceneSelect = useCallback((scene: SceneAsset) => {
-		setActiveSceneId(scene.id)
-		threeRef.current?.loadScene(scene)
+	const cancelSceneSettingsAnimation = useCallback(() => {
+		if (settingsAnimationFrameRef.current === null) return
+		cancelAnimationFrame(settingsAnimationFrameRef.current)
+		settingsAnimationFrameRef.current = null
 	}, [])
+
+	const animateSceneSettings = useCallback(
+		(targetSettings: SceneSettings, durationSeconds: number) => {
+			cancelSceneSettingsAnimation()
+
+			const startSettings = cloneSceneSettings(sceneSettingsRef.current)
+			const durationMs = Math.max(0, durationSeconds * 1000)
+			if (durationMs === 0) {
+				setSceneSettings(targetSettings)
+				return
+			}
+
+			const startTime = performance.now()
+			const tick = (time: number) => {
+				const progress = (time - startTime) / durationMs
+				const nextSettings = interpolateSceneSettings(startSettings, targetSettings, progress)
+				setSceneSettings(nextSettings)
+
+				if (progress < 1) {
+					settingsAnimationFrameRef.current = requestAnimationFrame(tick)
+					return
+				}
+
+				settingsAnimationFrameRef.current = null
+			}
+
+			settingsAnimationFrameRef.current = requestAnimationFrame(tick)
+		},
+		[cancelSceneSettingsAnimation]
+	)
+
+	const handleSceneSelect = useCallback(
+		(scene: SceneAsset) => {
+			const nextSettings = resolveSceneSettingsPreset(scene)
+			setActiveSceneId(scene.id)
+			const activeAssetId = threeRef.current?.getSceneStats().activeAssetId ?? null
+			if (scene.id === activeAssetId) {
+				setSceneSettings(nextSettings)
+				return
+			}
+
+			pendingScenePresetRef.current = {
+				sceneId: scene.id,
+				settings: nextSettings,
+			}
+			animateSceneSettings(nextSettings, sceneSettingsRef.current.particles.morphDuration)
+			threeRef.current?.loadScene(scene)
+		},
+		[animateSceneSettings]
+	)
 
 	const handleTogglePause = useCallback(() => {
 		const nextIsPaused = threeRef.current?.togglePaused() ?? false
@@ -114,8 +301,13 @@ export default function App() {
 					})
 				}
 			},
-			onLoadSuccess: _asset => {
-				setActiveSceneId(_asset.id)
+			onLoadSuccess: asset => {
+				setActiveSceneId(asset.id)
+				if (pendingScenePresetRef.current?.sceneId === asset.id) {
+					cancelSceneSettingsAnimation()
+					setSceneSettings(pendingScenePresetRef.current.settings)
+					pendingScenePresetRef.current = null
+				}
 				hasCompletedInitialLoadRef.current = true
 				setLoaderState({
 					visible: false,
@@ -124,7 +316,11 @@ export default function App() {
 					message: null,
 				})
 			},
-			onLoadError: (_asset, error) => {
+			onLoadError: (asset, error) => {
+				if (pendingScenePresetRef.current?.sceneId === asset.id) {
+					cancelSceneSettingsAnimation()
+					pendingScenePresetRef.current = null
+				}
 				if (!hasCompletedInitialLoadRef.current) {
 					setLoaderState({
 						visible: true,
@@ -137,7 +333,7 @@ export default function App() {
 		}
 
 		const three = new Three(containerRef.current, {
-			settings: cloneSceneSettings(DEFAULT_SCENE_SETTINGS),
+			settings: cloneSceneSettings(INITIAL_SCENE_SETTINGS),
 			sceneLoadCallbacks,
 		})
 		threeRef.current = three
@@ -145,11 +341,16 @@ export default function App() {
 		setIsScenePaused(three.isPaused)
 
 		return () => {
+			cancelSceneSettingsAnimation()
 			clearRecordingTimers()
 			three.dispose()
 			threeRef.current = null
 		}
-	}, [clearRecordingTimers])
+	}, [cancelSceneSettingsAnimation, clearRecordingTimers])
+
+	useEffect(() => {
+		sceneSettingsRef.current = sceneSettings
+	}, [sceneSettings])
 
 	useEffect(() => {
 		const three = threeRef.current

@@ -472,11 +472,17 @@ function ControlRenderer({
 }) {
 	const currentValue =
 		settings[control.group][control.settingKey as keyof SceneSettings[typeof control.group]]
+	const defaultValue =
+		DEFAULT_SCENE_SETTINGS[control.group][
+			control.settingKey as keyof SceneSettings[typeof control.group]
+		]
+	const hasChanged = isControlValueChanged(currentValue, defaultValue)
 
 	if (control.kind === 'slider') {
 		return (
 			<Slider
 				label={control.label}
+				showChangedIndicator={hasChanged}
 				value={Number(currentValue)}
 				min={control.min}
 				max={control.max}
@@ -493,6 +499,7 @@ function ControlRenderer({
 		return (
 			<Toggle
 				label={control.label}
+				showChangedIndicator={hasChanged}
 				checked={Boolean(currentValue)}
 				onCheckedChange={value =>
 					onChange(control.group, control.settingKey as never, value as never)
@@ -505,6 +512,7 @@ function ControlRenderer({
 		return (
 			<ColorControl
 				label={control.label}
+				showChangedIndicator={hasChanged}
 				value={String(currentValue)}
 				onPickerActiveChange={onColorPickerActiveChange}
 				onValueChange={value =>
@@ -517,11 +525,20 @@ function ControlRenderer({
 	return (
 		<SelectControl
 			label={control.label}
+			showChangedIndicator={hasChanged}
 			value={String(currentValue)}
 			options={control.options}
 			onValueChange={value => onChange(control.group, control.settingKey as never, value as never)}
 		/>
 	)
+}
+
+function isControlValueChanged(currentValue: unknown, defaultValue: unknown) {
+	if (typeof currentValue === 'number' && typeof defaultValue === 'number') {
+		return Math.abs(currentValue - defaultValue) > 1e-6
+	}
+
+	return currentValue !== defaultValue
 }
 
 function randomizeControl(control: ControlDefinition) {

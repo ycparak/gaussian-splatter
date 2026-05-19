@@ -66,7 +66,7 @@ export default function InfoPanel({ onRequestClose }: InfoPanelProps) {
 				A browser based particle generator that takes an image and outputs a gaussian splat using
 				Apple's ML SHARP, Three.js &amp; GPGPU.
 				<br />
-				Crafted with love + AI, by{' '}
+				Crafted with love, by{' '}
 				<a
 					href='https://yusufparak.com'
 					target='_blank'

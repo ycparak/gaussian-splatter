@@ -27,6 +27,7 @@ const stretchTransition = {
 
 interface SliderProps {
 	label?: string
+	showChangedIndicator?: boolean
 	value?: number
 	onValueChange?: (value: number) => void
 	min?: number
@@ -40,6 +41,7 @@ interface SliderProps {
 
 export default function Slider({
 	label = 'Label',
+	showChangedIndicator = false,
 	value = DEFAULT_VALUE,
 	onValueChange,
 	min = DEFAULT_MIN,
@@ -322,10 +324,16 @@ export default function Slider({
 				<span
 					ref={labelRef}
 					className={cn(
-						'pointer-events-none absolute top-1/2 left-4 -translate-y-1/2 text-xs leading-none transition-colors',
+						'pointer-events-none absolute top-1/2 left-4 flex -translate-y-1/2 items-center gap-3 text-xs leading-none transition-colors',
 						isActive ? 'text-neutral-300' : 'text-neutral-400'
 					)}>
-					{label}
+					<span>{label}</span>
+					{showChangedIndicator ? (
+						<span
+							aria-hidden='true'
+							className='size-1.5 shrink-0 rounded-full bg-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.75)]'
+						/>
+					) : null}
 				</span>
 
 				{showInput ? (

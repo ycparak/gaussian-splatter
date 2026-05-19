@@ -32,10 +32,6 @@ import {
 import { bundledScenes } from '@/src/engine/availableScenes'
 import { cn } from '@/src/lib/utils'
 
-const preferredSceneOrder = ['Chapel', 'Colosseum', 'Modern', 'Nousresearch', 'Tokyo'] as const
-const preferredOrderIndex = new Map<string, number>(
-	preferredSceneOrder.map((id, index) => [id, index])
-)
 const activeJobStatuses = new Set<GenerationJobStatus>(['queued', 'running', 'optimizing'])
 const stageDurationByStatus: Record<Exclude<GenerationJobStatus, 'done' | 'error'>, number> = {
 	queued: 20,
@@ -46,8 +42,14 @@ const stageDurationByStatus: Record<Exclude<GenerationJobStatus, 'done' | 'error
 const compressionPercentBySceneId: Record<string, number> = {
 	Chapel: 12,
 	Colosseum: 11,
+	English: 11,
 	Modern: 13,
-	Nousresearch: 12,
+	Nous: 12,
+	Patio: 13,
+	Persia: 11,
+	Petra: 13,
+	Road: 12,
+	Sintra: 12,
 	Tokyo: 11,
 }
 
@@ -96,24 +98,7 @@ export default function ImagePanel({
 	const orderedScenes = useMemo(() => {
 		const sourceScenes = enableUploads ? [...bundledScenes, ...generatedScenes] : [...bundledScenes]
 
-		return sourceScenes.sort((left, right) => {
-			const leftOrder = preferredOrderIndex.get(left.id)
-			const rightOrder = preferredOrderIndex.get(right.id)
-
-			if (leftOrder !== undefined && rightOrder !== undefined) {
-				return leftOrder - rightOrder
-			}
-
-			if (leftOrder !== undefined) {
-				return -1
-			}
-
-			if (rightOrder !== undefined) {
-				return 1
-			}
-
-			return left.name.localeCompare(right.name)
-		})
+		return sourceScenes.sort((left, right) => left.name.localeCompare(right.name))
 	}, [enableUploads, generatedScenes])
 
 	const closePanel = useCallback(() => {
@@ -370,7 +355,7 @@ export default function ImagePanel({
 							onDrop={handleDrop}
 						/>
 
-						<ul className='overflow-hidden rounded-2xl border border-white/10 bg-neutral-900/65 p-0 backdrop-blur-[10px]'>
+						<ul className='max-h-113 overflow-x-hidden overflow-y-auto rounded-2xl border border-white/10 bg-neutral-900/65 p-0 backdrop-blur-[10px]'>
 							{orderedScenes.map(scene => (
 								<ImageListItem
 									key={scene.id}
@@ -458,6 +443,7 @@ function UploadPanel({
 			<m.button
 				tabIndex={-1}
 				type='button'
+				initial={false}
 				disabled={isBusy}
 				aria-label={
 					isDisabledUploadPanel
@@ -521,7 +507,7 @@ function UploadPanel({
 								? 'Download to generate your own splats'
 								: 'Drop image or drag to upload'}
 						</span>
-						{showStatus ? (
+						{/*{showStatus ? (
 							<span
 								className={cn(
 									'max-w-full truncate text-[11px] leading-4',
@@ -529,7 +515,7 @@ function UploadPanel({
 								)}>
 								{message}
 							</span>
-						) : null}
+						) : null}*/}
 					</div>
 				)}
 			</m.button>
@@ -573,7 +559,7 @@ function estimateTimeRemainingText({
 
 	const minutes = Math.floor(remainingSeconds / 60)
 	const seconds = remainingSeconds % 60
-	return `~${minutes}:${String(seconds).padStart(2, '0')} remaining`
+	return `${minutes}:${String(seconds).padStart(2, '0')} est. time remaining`
 }
 
 function useObjectUrl(file: File | null) {

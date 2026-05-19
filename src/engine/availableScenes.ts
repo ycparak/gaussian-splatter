@@ -1,8 +1,8 @@
-import { bundledScenes as rawBundledScenes } from "virtual:bundled-scenes";
-import type { SceneAsset } from "@/shared/types";
+import type { SceneAsset } from '@/shared/types'
+import { bundledScenesManifest } from '@/src/engine/bundledScenesManifest'
 
-export const bundledScenes = rawBundledScenes as SceneAsset[];
+export const bundledScenes = bundledScenesManifest as SceneAsset[]
 
-export const defaultScene: SceneAsset | null = bundledScenes[0] ?? null;
+export const defaultScene: SceneAsset | null = bundledScenes[0] ?? null
 
-export type { SceneAsset };
+export type { SceneAsset }

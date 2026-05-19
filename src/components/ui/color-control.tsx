@@ -10,6 +10,7 @@ const HEX_COLOR_REGEX = /^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6}|[0-9A-Fa-f]{8})$/
 
 interface ColorControlProps {
 	label?: string
+	showChangedIndicator?: boolean
 	value?: string
 	onValueChange?: (value: string) => void
 	onPickerActiveChange?: (active: boolean) => void
@@ -19,6 +20,7 @@ interface ColorControlProps {
 
 export default function ColorControl({
 	label = 'Color',
+	showChangedIndicator = false,
 	value = DEFAULT_COLOR,
 	onValueChange,
 	onPickerActiveChange,
@@ -67,10 +69,16 @@ export default function ColorControl({
 				style={{ WebkitTapHighlightColor: 'transparent' }}>
 				<span
 					className={cn(
-						'pointer-events-none absolute top-1/2 left-4 -translate-y-1/2 text-xs leading-none transition-colors group-hover:text-neutral-300',
+						'pointer-events-none absolute top-1/2 left-4 flex -translate-y-1/2 items-center gap-3 text-xs leading-none transition-colors group-hover:text-neutral-300',
 						isPickerActive ? 'text-neutral-300' : 'text-neutral-400'
 					)}>
-					{label}
+					<span>{label}</span>
+					{showChangedIndicator ? (
+						<span
+							aria-hidden='true'
+							className='size-1.5 shrink-0 rounded-full bg-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.75)]'
+						/>
+					) : null}
 				</span>
 
 				<div className='absolute right-4 flex justify-center items-center gap-2'>

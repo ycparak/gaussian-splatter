@@ -10,7 +10,7 @@ A browser-based Three.js particle viewer and prototype image-to-point-cloud gene
 - Uses a React/Vite UI for scene selection, image upload, and generation status.
 - Supports Apple's SHARP CLI output (`.ply`) through a local Bun server.
 - Converts SHARP-generated `.ply` files into a compact `.pgs.gz` format for faster web loading.
-- Ships with a couple prepacked sample assets.
+- Loads bundled sample assets from a remote object store (R2).
 - Adds controls to manipulate the scene, particles, lighting, bloom, color, camera and renderer.
 
 This is a prototype, not a production service. The browser viewer runs fully in the browser, but SHARP inference does not. SHARP is currently a Python CLI/model workflow, so generation must run on a local machine or backend server with SHARP installed.
@@ -46,7 +46,7 @@ bun install
 
 ## Run The Viewer Only
 
-This starts the Vite frontend. The bundled scenes should load without SHARP installed.
+This starts the Vite frontend. Bundled scenes load from `VITE_BUNDLED_SCENES_BASE_URL`.
 
 ```bash
 bun run dev
@@ -57,6 +57,14 @@ Open:
 ```text
 http://localhost:5173/
 ```
+
+Set your bundled scene base URL before starting the frontend:
+
+```bash
+export VITE_BUNDLED_SCENES_BASE_URL="https://<your-r2-domain>/"
+```
+
+Example: `https://pub-xxxxxxxx.r2.dev/` or your attached custom domain.
 
 ## Run With Image Generation
 
@@ -176,7 +184,7 @@ server/generator.ts          Local upload + SHARP generation API
 scripts/pgs-format.ts        PLY to PGS packing logic
 scripts/pack-pgs.ts          CLI wrapper for packing assets
 shared/                      Shared types and pure helpers
-public/                      Browser-served sample assets
+public/                      Static assets (non-scene binaries)
 ```
 
 ## Important Notes

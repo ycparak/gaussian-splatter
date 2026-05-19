@@ -11,6 +11,7 @@ export type SelectOption = string | { value: string; label: string }
 
 interface SelectControlProps {
 	label?: string
+	showChangedIndicator?: boolean
 	value: string
 	options: SelectOption[]
 	onValueChange?: (value: string) => void
@@ -32,6 +33,7 @@ const DROPDOWN_PADDING = 8
 
 export default function SelectControl({
 	label = 'Select',
+	showChangedIndicator = false,
 	value,
 	options,
 	onValueChange,
@@ -140,10 +142,16 @@ export default function SelectControl({
 				style={{ WebkitTapHighlightColor: 'transparent' }}>
 				<span
 					className={cn(
-						'pointer-events-none absolute top-1/2 left-4 -translate-y-1/2 text-xs leading-none transition-colors group-hover:text-neutral-300',
+						'pointer-events-none absolute top-1/2 left-4 flex -translate-y-1/2 items-center gap-3 text-xs leading-none transition-colors group-hover:text-neutral-300',
 						isOpen ? 'text-neutral-300' : 'text-neutral-400'
 					)}>
-					{label}
+					<span>{label}</span>
+					{showChangedIndicator ? (
+						<span
+							aria-hidden='true'
+							className='size-1.5 shrink-0 rounded-full bg-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.75)]'
+						/>
+					) : null}
 				</span>
 
 				<div className='pointer-events-none absolute right-4 flex items-center gap-2'>
