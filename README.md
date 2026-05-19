@@ -66,6 +66,12 @@ export VITE_BUNDLED_SCENES_BASE_URL="https://<your-r2-domain>/"
 
 Example: `https://pub-xxxxxxxx.r2.dev/` or your attached custom domain.
 
+For production builds, set `VITE_BUNDLED_SCENES_BASE_URL` during `bun run build`
+(for example via `.env.production`).
+
+R2 CORS must allow your production origin (for example
+`https://splat.yusufparak.com`) for `GET` and `HEAD`.
+
 ## Run With Image Generation
 
 Start the local generation server:
