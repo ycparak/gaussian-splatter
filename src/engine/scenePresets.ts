@@ -9,6 +9,7 @@ type DeepPartial<T> = {
 const BUNDLED_SCENE_SETTING_OVERRIDES: Record<string, DeepPartial<SceneSettings>> = {
 	Chapel: {
 		camera: {
+			fov: 50,
 			targetX: -0.3,
 			targetZ: -15,
 			damping: 3.6,
@@ -32,17 +33,70 @@ const BUNDLED_SCENE_SETTING_OVERRIDES: Record<string, DeepPartial<SceneSettings>
 		color: {
 			brightness: -0.17,
 			contrast: 0.64,
-			saturation: 1.6,
-			tintStrength: 0.63,
+			saturation: 1.5,
+			tintStrength: 0.5,
 		},
 		bloom: {
-			strength: 0.7,
+			strength: 0.5,
 			radius: 0.79,
 			threshold: 0.54,
 		},
 		renderer: {
 			pixelRatioCap: 3,
 			exposure: 1.75,
+		},
+	},
+	Colosseum: {
+		camera: {
+			fov: 48,
+			targetX: -0.35,
+			targetY: 1.2,
+			damping: 3.6,
+		},
+		particles: {
+			size: 0.02,
+		},
+		scene: {
+			fogNear: 45.0,
+			fogFar: 55.5,
+		},
+		color: {
+			brightness: 0.19,
+			contrast: 0.45,
+			saturation: 1.43,
+		},
+		bloom: {
+			strength: 0.15,
+			radius: 1.0,
+			threshold: 0.73,
+		},
+	},
+	Modern: {
+		camera: {
+			z: 5.75,
+			targetY: -0.75,
+			targetZ: -6.45,
+		},
+		particles: {
+			size: 0.06,
+		},
+		scene: {
+			pointRotationX: 3.12,
+			scale: 1.1,
+		},
+		lighting: {
+			diffuse: 0.4,
+			specular: 0.0,
+		},
+		color: {
+			contrast: 0.57,
+			saturation: 1.72,
+			tintStrength: 0.31,
+		},
+		bloom: {
+			strength: 0.15,
+			radius: 0.37,
+			threshold: 0.18,
 		},
 	},
 }

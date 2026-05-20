@@ -15,7 +15,7 @@ import { RandomIcon } from '@/src/components/icons/random'
 import { RendererIcon } from '@/src/components/icons/renderer'
 import { ResetIcon } from '@/src/components/icons/reset'
 import { SceneIcon } from '@/src/components/icons/scene'
-import { DEFAULT_SCENE_SETTINGS, cloneSceneSettings } from '@/src/engine/sceneSettings'
+import { cloneSceneSettings } from '@/src/engine/sceneSettings'
 import Button from '@/src/components/ui/button'
 import ColorControl from '@/src/components/ui/color-control'
 import SelectControl from '@/src/components/ui/select-control'
@@ -39,6 +39,7 @@ interface Tab {
 
 interface ControlsPanelProps {
 	settings: SceneSettings
+	defaultSettings: SceneSettings
 	onSettingsChange: Dispatch<SetStateAction<SceneSettings>>
 }
 
@@ -161,7 +162,11 @@ const visibleTabs = tabs.filter(tab => availableSectionIds.has(tab.id))
 const tabsById = new Map(tabs.map(tab => [tab.id, tab] as const))
 const popupId = 'scene-controls-panel-popup'
 
-export default function ControlsPanel({ settings, onSettingsChange }: ControlsPanelProps) {
+export default function ControlsPanel({
+	settings,
+	defaultSettings,
+	onSettingsChange,
+}: ControlsPanelProps) {
 	const [activeTab, setActiveTab] = useState<TabId | null>(null)
 	const rootRef = useRef<HTMLElement | null>(null)
 	const popupRef = useRef<HTMLDivElement | null>(null)
@@ -212,10 +217,10 @@ export default function ControlsPanel({ settings, onSettingsChange }: ControlsPa
 		(group: SettingsGroup) => {
 			onSettingsChange(currentSettings => ({
 				...currentSettings,
-				[group]: cloneSceneSettings(DEFAULT_SCENE_SETTINGS)[group],
+				[group]: cloneSceneSettings(defaultSettings)[group],
 			}))
 		},
-		[onSettingsChange]
+		[defaultSettings, onSettingsChange]
 	)
 
 	const randomizeSection = useCallback(
@@ -432,6 +437,7 @@ export default function ControlsPanel({ settings, onSettingsChange }: ControlsPa
 														key={`${activeSection.id}-${control.label}`}
 														control={control}
 														settings={settings}
+														defaultSettings={defaultSettings}
 														onChange={updateSetting}
 														onColorPickerActiveChange={handleColorPickerActiveChange}
 													/>
@@ -458,11 +464,13 @@ export default function ControlsPanel({ settings, onSettingsChange }: ControlsPa
 function ControlRenderer({
 	control,
 	settings,
+	defaultSettings,
 	onChange,
 	onColorPickerActiveChange,
 }: {
 	control: ControlDefinition
 	settings: SceneSettings
+	defaultSettings: SceneSettings
 	onChange: <TGroup extends keyof SceneSettings, TKey extends keyof SceneSettings[TGroup]>(
 		group: TGroup,
 		key: TKey,
@@ -473,9 +481,7 @@ function ControlRenderer({
 	const currentValue =
 		settings[control.group][control.settingKey as keyof SceneSettings[typeof control.group]]
 	const defaultValue =
-		DEFAULT_SCENE_SETTINGS[control.group][
-			control.settingKey as keyof SceneSettings[typeof control.group]
-		]
+		defaultSettings[control.group][control.settingKey as keyof SceneSettings[typeof control.group]]
 	const hasChanged = isControlValueChanged(currentValue, defaultValue)
 
 	if (control.kind === 'slider') {

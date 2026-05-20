@@ -182,6 +182,9 @@ export default function App() {
 	const [isScenePaused, setIsScenePaused] = useState(false)
 	const [isInfoOpen, setIsInfoOpen] = useState(false)
 	const [activeSceneId, setActiveSceneId] = useState<string | null>(defaultScene?.id ?? null)
+	const [sceneDefaultSettings, setSceneDefaultSettings] = useState<SceneSettings>(() =>
+		cloneSceneSettings(INITIAL_SCENE_SETTINGS)
+	)
 	const [sceneSettings, setSceneSettings] = useState<SceneSettings>(() =>
 		cloneSceneSettings(INITIAL_SCENE_SETTINGS)
 	)
@@ -257,6 +260,7 @@ export default function App() {
 			setActiveSceneId(scene.id)
 			const activeAssetId = threeRef.current?.getSceneStats().activeAssetId ?? null
 			if (scene.id === activeAssetId) {
+				setSceneDefaultSettings(nextSettings)
 				setSceneSettings(nextSettings)
 				return
 			}
@@ -305,6 +309,7 @@ export default function App() {
 				setActiveSceneId(asset.id)
 				if (pendingScenePresetRef.current?.sceneId === asset.id) {
 					cancelSceneSettingsAnimation()
+					setSceneDefaultSettings(pendingScenePresetRef.current.settings)
 					setSceneSettings(pendingScenePresetRef.current.settings)
 					pendingScenePresetRef.current = null
 				}
@@ -391,7 +396,11 @@ export default function App() {
 						onTogglePause={handleTogglePause}
 					/>
 
-					<ControlPanel settings={sceneSettings} onSettingsChange={setSceneSettings} />
+					<ControlPanel
+						settings={sceneSettings}
+						defaultSettings={sceneDefaultSettings}
+						onSettingsChange={setSceneSettings}
+					/>
 
 					<ImagePanel
 						activeSceneId={activeSceneId}
