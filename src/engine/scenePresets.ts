@@ -71,6 +71,65 @@ const BUNDLED_SCENE_SETTING_OVERRIDES: Record<string, DeepPartial<SceneSettings>
 			threshold: 0.73,
 		},
 	},
+	English: {
+		camera: {
+			z: 4.4,
+			targetY: -0.3,
+		},
+		scene: {
+			fogNear: 35.5,
+		},
+		lighting: {
+			specular: 0.02,
+			shininess: 85,
+		},
+		color: {
+			brightness: 0.15,
+			contrast: 0.58,
+			saturation: 1.49,
+			tintStrength: 0.45,
+		},
+		bloom: {
+			strength: 0.65,
+			radius: 0.3,
+			threshold: 0.42,
+		},
+		renderer: {
+			exposure: 1.75,
+		},
+	},
+	Iran: {
+		camera: {
+			z: 2.95,
+			targetY: -0.1,
+		},
+		particles: {
+			size: 0.035,
+			flowFieldInfluence: 0.35,
+		},
+		scene: {
+			fogNear: 19.5,
+			fogFar: 20.5,
+			pointRotationX: 3.14,
+		},
+		lighting: {
+			ambient: 0.45,
+			specular: 0.0,
+		},
+		color: {
+			brightness: -0.1,
+			contrast: 0.52,
+			tintStrength: 0.75,
+		},
+		bloom: {
+			strength: 0.05,
+			radius: 0.1,
+			threshold: 0.34,
+		},
+		renderer: {
+			exposure: 0.95,
+		},
+	},
 	Modern: {
 		camera: {
 			z: 5.75,
@@ -97,6 +156,86 @@ const BUNDLED_SCENE_SETTING_OVERRIDES: Record<string, DeepPartial<SceneSettings>
 			strength: 0.15,
 			radius: 0.37,
 			threshold: 0.18,
+		},
+	},
+	Petra: {
+		camera: {
+			fov: 56,
+			z: 2.05,
+			targetX: 0.05,
+			targetY: -0.1,
+			targetZ: -4.25,
+		},
+		scene: {
+			pointRotationX: 3.09,
+		},
+		color: {
+			brightness: 0.1,
+			contrast: 0.55,
+			saturation: 1.27,
+		},
+		bloom: {
+			strength: 0.1,
+			radius: 0.05,
+			threshold: 0.75,
+		},
+		renderer: {
+			exposure: 0.9,
+		},
+	},
+	Patio: {
+		camera: {
+			fov: 44,
+			z: 2.7,
+			targetX: -0.45,
+			targetY: 0.15,
+			targetZ: -5.0,
+		},
+		particles: {
+			size: 0.028,
+			flowFieldInfluence: 0.43,
+			flowFieldStrength: 0.4,
+			flowFieldFrequency: 2.0,
+			decayRate: 1.8,
+			returnForce: 1.8,
+			morphDuration: 1.65,
+		},
+		scene: {
+			scale: 1.05,
+		},
+		lighting: {
+			ambient: 0.35,
+			diffuse: 0.65,
+			specular: 0.0,
+		},
+		color: {
+			brightness: 0.01,
+			contrast: 0.58,
+			saturation: 1.38,
+		},
+		bloom: {
+			strength: 0.95,
+			radius: 0.53,
+			threshold: 0.39,
+		},
+	},
+	Road: {
+		camera: {
+			targetX: 0.1,
+			targetY: 0.15,
+			targetZ: -5.85,
+		},
+		particles: {
+			size: 0.04,
+		},
+		color: {
+			brightness: -0.14,
+			saturation: 1.5,
+			tintStrength: 0.5,
+		},
+		bloom: {
+			strength: 0.05,
+			threshold: 0.65,
 		},
 	},
 }

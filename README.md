@@ -2,28 +2,16 @@
 
 A browser-based Three.js particle viewer and prototype image-to-point-cloud generator powered by Apple's SHARP model, i.e. `Image -> Apple's ML SHARP -> Point Cloud -> Three JS GPGPU -> Particle System` based on [three-ml-sharp](https://github.com/cullenwebber/three-ml-sharp).
 
-> ⚠️ **Epistemic Status:** Entirely agentically engineered with only minimal oversight, take that fwiw.
-
 ## What This Project Does
 
 - Renders large point clouds in the browser with Three.js and `GPUComputationRenderer`.
 - Uses a React/Vite UI for scene selection, image upload, and generation status.
 - Supports Apple's SHARP CLI output (`.ply`) through a local Bun server.
 - Converts SHARP-generated `.ply` files into a compact `.pgs.gz` format for faster web loading.
-- Loads bundled sample assets from a remote object store (R2).
+- Comes with pre-bundled sample images loaded locally from `public/`.
 - Adds controls to manipulate the scene, particles, lighting, bloom, color, camera and renderer.
 
 This is a prototype, not a production service. The browser viewer runs fully in the browser, but SHARP inference does not. SHARP is currently a Python CLI/model workflow, so generation must run on a local machine or backend server with SHARP installed.
-
-## Tech Stack
-
-- Bun
-- Vite
-- React
-- Three.js
-- Tailwind CSS v4
-- Biome
-- Apple's SHARP CLI for image-to-3DGS generation
 
 ## Requirements
 
@@ -46,7 +34,7 @@ bun install
 
 ## Run The Viewer Only
 
-This starts the Vite frontend. Bundled scenes load from `VITE_BUNDLED_SCENES_BASE_URL`.
+This starts the Vite frontend. Bundled scenes are auto-discovered from `public/*.pgs.gz`.
 
 ```bash
 bun run dev
@@ -58,19 +46,7 @@ Open:
 http://localhost:5173/
 ```
 
-Set your bundled scene base URL before starting the frontend:
-
-```bash
-export VITE_BUNDLED_SCENES_BASE_URL="https://<your-r2-domain>/"
-```
-
-Example: `https://pub-xxxxxxxx.r2.dev/` or your attached custom domain.
-
-For production builds, set `VITE_BUNDLED_SCENES_BASE_URL` during `bun run build`
-(for example via `.env.production`).
-
-R2 CORS must allow your production origin (for example
-`https://splat.yusufparak.com`) for `GET` and `HEAD`.
+Add or remove bundled scenes by adding/removing `.pgs.gz` files in `public/`.
 
 ## Run With Image Generation
 

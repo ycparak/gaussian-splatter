@@ -15,9 +15,14 @@ declare module '*.vert' {
 	export default shaderSource
 }
 
+declare module 'virtual:bundled-scenes' {
+	import type { SceneAsset } from '@/shared/types'
+
+	export const bundledScenes: SceneAsset[]
+}
+
 interface ImportMetaEnv {
 	readonly VITE_ENABLE_UPLOADS?: string
-	readonly VITE_BUNDLED_SCENES_BASE_URL?: string
 }
 
 interface ImportMeta {

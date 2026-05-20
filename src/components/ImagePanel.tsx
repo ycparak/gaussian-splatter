@@ -43,13 +43,12 @@ const compressionPercentBySceneId: Record<string, number> = {
 	Chapel: 12,
 	Colosseum: 11,
 	English: 11,
+	Iran: 11,
 	Modern: 13,
 	Nous: 12,
 	Patio: 13,
-	Persia: 11,
 	Petra: 13,
 	Road: 12,
-	Sintra: 12,
 	Tokyo: 11,
 }
 
