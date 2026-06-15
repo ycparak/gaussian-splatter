@@ -219,14 +219,14 @@ const BUNDLED_SCENE_SETTING_OVERRIDES: Record<string, DeepPartial<SceneSettings>
 			threshold: 0.39,
 		},
 	},
-	Road: {
+	Aylesbury: {
 		camera: {
 			targetX: 0.1,
 			targetY: 0.15,
 			targetZ: -5.85,
 		},
 		particles: {
-			size: 0.04,
+			size: 0.0425,
 		},
 		color: {
 			brightness: -0.14,

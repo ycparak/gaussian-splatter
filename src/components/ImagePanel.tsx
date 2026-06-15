@@ -40,6 +40,7 @@ const stageDurationByStatus: Record<Exclude<GenerationJobStatus, 'done' | 'error
 }
 
 const compressionPercentBySceneId: Record<string, number> = {
+	Aylesbury: 12,
 	Chapel: 12,
 	Colosseum: 11,
 	English: 11,
@@ -48,7 +49,6 @@ const compressionPercentBySceneId: Record<string, number> = {
 	Nous: 12,
 	Patio: 13,
 	Petra: 13,
-	Road: 12,
 	Tokyo: 11,
 }
 
@@ -72,12 +72,21 @@ function shouldStartOpen() {
 	return window.matchMedia('(min-width: 768px)').matches
 }
 
+function shouldHideUploadPanel() {
+	if (typeof window === 'undefined') {
+		return false
+	}
+
+	return new URLSearchParams(window.location.search).get('hideUploadPanel') === 'true'
+}
+
 export default function ImagePanel({
 	activeSceneId,
 	enableUploads,
 	onSceneSelect,
 }: ImagePanelProps) {
 	const [isOpen, setIsOpen] = useState(shouldStartOpen)
+	const [hideUploadPanel] = useState(shouldHideUploadPanel)
 	const [isDragging, setIsDragging] = useState(false)
 	const [message, setMessage] = useState('')
 	const [selectedFile, setSelectedFile] = useState<File | null>(null)
@@ -337,22 +346,24 @@ export default function ImagePanel({
 						animate={{ opacity: 1 }}
 						exit={{ opacity: 0, transition: { duration: 0.24, ease: 'easeOut' } }}
 						className='pointer-events-auto fixed right-5 bottom-16 z-10 flex w-75.5 flex-col gap-1.5'>
-						<UploadPanel
-							enableUploads={enableUploads}
-							fileInputRef={fileInputRef}
-							isDragging={isDragging}
-							isBusy={isBusy}
-							status={jobStatus}
-							message={message}
-							previewUrl={previewUrl}
-							estimatedTimeText={estimatedTimeText}
-							onInputChange={handleInputChange}
-							onPickClick={handlePickClick}
-							onDragEnter={handleDragEnter}
-							onDragOver={handleDragOver}
-							onDragLeave={handleDragLeave}
-							onDrop={handleDrop}
-						/>
+						{hideUploadPanel ? null : (
+							<UploadPanel
+								enableUploads={enableUploads}
+								fileInputRef={fileInputRef}
+								isDragging={isDragging}
+								isBusy={isBusy}
+								status={jobStatus}
+								message={message}
+								previewUrl={previewUrl}
+								estimatedTimeText={estimatedTimeText}
+								onInputChange={handleInputChange}
+								onPickClick={handlePickClick}
+								onDragEnter={handleDragEnter}
+								onDragOver={handleDragOver}
+								onDragLeave={handleDragLeave}
+								onDrop={handleDrop}
+							/>
+						)}
 
 						<ul className='max-h-113 overflow-x-hidden overflow-y-auto rounded-2xl border border-white/10 bg-neutral-900/65 p-0 backdrop-blur-[10px]'>
 							{orderedScenes.map(scene => (
