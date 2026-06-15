@@ -69,6 +69,10 @@ function shouldStartOpen() {
 		return false
 	}
 
+	if (new URLSearchParams(window.location.search).get('closeImagePanel') === 'true') {
+		return false
+	}
+
 	return window.matchMedia('(min-width: 768px)').matches
 }
 
